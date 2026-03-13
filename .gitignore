@@ -1,0 +1,28 @@
+# 환경 변수 (API 키)
+.env
+.env.*
+
+# Google OAuth
+client_secret.json
+token.json
+
+# 생성 산출물
+out/
+public/audio.mp3
+src/data/sync_data.json
+
+# Node
+node_modules/
+dist/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Remotion 캐시
+.remotion/
