@@ -3,6 +3,8 @@ import { Composition } from "remotion";
 import { MainVideo } from "./MainVideo";
 import { Sample } from "./Sample";
 import { Thumbnail } from "./Thumbnail";
+import { ChannelProfile } from "./ChannelProfile";
+import { ChannelBanner } from "./ChannelBanner";
 import syncData from "../data/sync_data.json";
 
 const FPS = 30;
@@ -38,6 +40,22 @@ export const Root: React.FC = () => {
         fps={FPS}
         width={1280}
         height={720}
+      />
+      <Composition
+        id="ChannelProfile"
+        component={ChannelProfile}
+        durationInFrames={1}
+        fps={FPS}
+        width={800}
+        height={800}
+      />
+      <Composition
+        id="ChannelBanner"
+        component={ChannelBanner}
+        durationInFrames={1}
+        fps={FPS}
+        width={2560}
+        height={1440}
       />
     </>
   );
