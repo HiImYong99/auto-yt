@@ -31,7 +31,7 @@ export const Thumbnail: React.FC = () => {
           fontSize: 104, fontWeight: 900, lineHeight: 1.05,
           color: "#ffffff", letterSpacing: "-0.04em",
         }}>
-          프로그래밍
+          3시간 만에
         </div>
 
         {/* 라인 2 — 형광 강조 */}
@@ -40,7 +40,7 @@ export const Thumbnail: React.FC = () => {
           color: "#aaff00", letterSpacing: "-0.05em",
           textShadow: "0 0 60px rgba(170,255,0,0.35)",
         }}>
-          몰라도 됩니다
+          월 1억 버는 법
         </div>
 
         {/* 라인 3 */}
@@ -48,7 +48,7 @@ export const Thumbnail: React.FC = () => {
           fontSize: 38, fontWeight: 600, marginTop: 20,
           color: "rgba(255,255,255,0.4)", letterSpacing: "-0.01em",
         }}>
-          AI로 혼자 만드는 시대
+          바이브 코더의 5가지 비밀 전략
         </div>
       </div>
 
@@ -58,7 +58,7 @@ export const Thumbnail: React.FC = () => {
         transform: "translateY(-50%)",
         fontSize: 200, lineHeight: 1,
         filter: "drop-shadow(0 0 30px rgba(170,255,0,0.3))",
-      }}>🚀</div>
+      }}>💰</div>
 
       {/* 우상단 배지 (Maker Evan의 "Claude Code" 배지 스타일) */}
       <div style={{
@@ -70,7 +70,7 @@ export const Thumbnail: React.FC = () => {
         <span style={{
           fontSize: 22, fontWeight: 800, color: "#0a1a00",
           letterSpacing: "0.02em",
-        }}>바이브코딩</span>
+        }}>바이브코더</span>
       </div>
 
       {/* 하단 바 */}

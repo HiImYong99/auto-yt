@@ -25,262 +25,175 @@ type SceneVisual    = VisualNone | VisualIcon | VisualKeyword | VisualCounter | 
 // 씬 플랜: 문장 ID → 시각 요소 배열 (여러 개면 시간 균등 분배)
 // ─────────────────────────────────────────────────────────────
 const SCENE_PLAN: Array<{ id: number; visuals: SceneVisual[] }> = [
-  { id: 0,  visuals: [{ type:"keyword", text:"프로그래밍의 종말", color:"#f87171" }] },
+  // 0: 단 3시간 만에 만든 서비스로 매달 1억 원 가까운 현금을 만지는 사람이 있습니다.
+  { id: 0,  visuals: [
+    { type:"counter",  from:0,  to:3,          suffix:"시간 만에 제작" },
+    { type:"counter",  from:0,  to:100000000,  suffix:"원/월 수익" },
+  ]},
+  // 1: 천재 개발자냐고요? 아니요, 그는 스스로를 '바이브 코더'라고 부릅니다.
   { id: 1,  visuals: [
-    { type:"infotip",  title:"패러다임 전환", items:["타자 속도 ❌","문법 암기 ❌","기발한 상상 ✅"] },
-    { type:"keyword",  text:"상상력 = 성공",  color:"#facc15" },
-    { type:"icon",     emoji:"💡",             label:"기발한 아이디어" },
+    { type:"icon",     emoji:"🤔",             label:"천재 개발자?" },
+    { type:"keyword",  text:"바이브 코더",     color:"#aaff00" },
   ]},
+  // 2: 지금부터 그가 AI를 활용해 돈을 쓸어 담는 5가지 비밀 전략을 공개합니다.
   { id: 2,  visuals: [
-    { type:"counter",  from:0,  to:30,         suffix:"명의 엘리트 개발자" },
-    { type:"icon",     emoji:"🌙",             label:"밤샘 개발" },
+    { type:"infotip",  title:"5가지 비밀 전략", items:["① 속도전","② 과정을 팔아라","③ 망가뜨리며 전진","④ 레버리지","⑤ 서비스 너머의 가치"] },
   ]},
+  // 3: 복잡한 기술은 필요 없습니다. 아이디어를 돈으로 바꾸는 속도만 있으면 됩니다.
   { id: 3,  visuals: [
-    { type:"counter",  from:30, to:1,          suffix:"인 개발자" },
-    { type:"icon",     emoji:"🏠",             label:"방구석 개발" },
+    { type:"keyword",  text:"아이디어 → 돈",   color:"#facc15" },
+    { type:"icon",     emoji:"⚡",             label:"속도가 전부" },
   ]},
+  // 4: 첫 번째 비밀은 '완성'보다 '생존'에 집중하는 속도전입니다.
   { id: 4,  visuals: [
-    { type:"keyword",  text:"감각적 빌딩",     color:"#7bb4ff" },
-    { type:"infotip",  title:"감각적 빌딩이란", items:["직관 + 아이디어","코드 없이 시작","1인 제국 건설"] },
-    { type:"keyword",  text:"1인 제국",        color:"#a78bfa" },
+    { type:"keyword",  text:"① 속도전",        color:"#f87171" },
+    { type:"infotip",  title:"완성 vs 생존",   items:["완성 ❌","생존 ✅","속도가 최우선"] },
   ]},
+  // 5: 그는 완벽한 앱을 만들려 하지 않습니다. 단 몇 시간 만에 돌아가는 프로토타입을 던지죠.
   { id: 5,  visuals: [
-    { type:"infotip",  title:"필요 없는 것들",  items:["C언어 ❌","Java ❌","복잡한 문법 ❌"] },
-    { type:"techbadge",label:"대신 이걸로",     tags:["Claude","ChatGPT","Cursor"] },
+    { type:"icon",     emoji:"🗑️",            label:"완벽주의 버려라" },
+    { type:"icon",     emoji:"🚀",             label:"프로토타입 출시" },
   ]},
+  // 6: 시장의 반응이 없으면 바로 버리고, 반응이 오면 그때부터 다듬기 시작합니다.
   { id: 6,  visuals: [
-    { type:"keyword",  text:"의지",            color:"#facc15" },
-    { type:"infotip",  title:"유일한 무기",     items:["코드 실력 ❌","학벌 ❌","의지 ✅"] },
+    { type:"infotip",  title:"시장 반응 공식", items:["반응 없음 → 버려라","반응 있음 → 다듬어라"] },
   ]},
+  // 7: 실행이 정보를 만든다는 원칙을 철저히 따르는 셈입니다.
   { id: 7,  visuals: [
-    { type:"icon",     emoji:"🖱️",            label:"마우스 클릭" },
-    { type:"icon",     emoji:"🌍",             label:"전 세계 시장" },
-    { type:"icon",     emoji:"💰",             label:"지갑을 열다" },
+    { type:"keyword",  text:"실행 = 정보",     color:"#7bb4ff" },
   ]},
+  // 8: 실제로 그가 시도한 프로젝트 중 95%는 실패했습니다.
   { id: 8,  visuals: [
+    { type:"counter",  from:0,  to:95,         suffix:"% 실패" },
+    { type:"icon",     emoji:"💀",             label:"95% 실패" },
+  ]},
+  // 9: 하지만 남은 5%가 매달 수천만 원의 수익을 가져다주고 있죠.
+  { id: 9,  visuals: [
+    { type:"counter",  from:0,  to:5,          suffix:"% 성공" },
+    { type:"counter",  from:0,  to:30000000,   suffix:"원/월" },
+  ]},
+  // 10: 여러분도 완벽주의를 버리세요. 지금 바로 시장에 당신의 아이디어를 던져야 합니다.
+  { id: 10, visuals: [
+    { type:"keyword",  text:"지금 당장 던져라", color:"#aaff00" },
+  ]},
+  // 11: 두 번째 전략은 '만드는 과정을 팔아라'입니다.
+  { id: 11, visuals: [
+    { type:"keyword",  text:"② 과정을 팔아라", color:"#fb923c" },
+  ]},
+  // 12: 그는 코드를 한 줄 짤 때마다 SNS에 공유하며 팬덤을 만듭니다.
+  { id: 12, visuals: [
+    { type:"icon",     emoji:"📱",             label:"SNS 공유" },
+    { type:"icon",     emoji:"🔥",             label:"팬덤 형성" },
+  ]},
+  // 13: 사람들은 완벽한 기성품보다 누군가의 고군분투가 담긴 성장 스토리에 열광하죠.
+  { id: 13, visuals: [
+    { type:"infotip",  title:"팬이 원하는 것", items:["완벽한 기성품 ❌","고군분투 성장 스토리 ✅"] },
+  ]},
+  // 14: 기술이 흔해진 시대에 가장 강력한 무기는 바로 '진정성 있는 소통'입니다.
+  { id: 14, visuals: [
+    { type:"keyword",  text:"진정성 있는 소통", color:"#f472b6" },
+    { type:"techbadge",label:"최강 무기",       tags:["진정성","소통","스토리"] },
+  ]},
+  // 15: 로봇이 만든 결과물이라도, 그것을 지휘하는 인간의 이야기가 있으면 사람들은 지갑을 엽니다.
+  { id: 15, visuals: [
+    { type:"icon",     emoji:"🤖",             label:"AI 결과물" },
+    { type:"icon",     emoji:"💳",             label:"지갑을 연다" },
+  ]},
+  // 16: 당신의 실패와 성공을 실시간으로 중계하며 유저를 동료로 만드세요.
+  { id: 16, visuals: [
+    { type:"infotip",  title:"유저를 동료로",  items:["실패도 공유","성공도 공유","실시간 중계"] },
+  ]},
+  // 17: 구독과 좋아요를 눌러주시면 이런 실전 전략을 가장 먼저 받아보실 수 있습니다.
+  { id: 17, visuals: [
     { type:"icon",     emoji:"👍",             label:"구독 & 좋아요" },
   ]},
-  { id: 9,  visuals: [
-    { type:"keyword",  text:"① 프론트엔드",   color:"#a78bfa" },
-    { type:"infotip",  title:"프론트엔드 = 겉모습", items:["뼈대 (HTML)","인테리어 (CSS)","움직임 (JS)"] },
-  ]},
-  { id: 10, visuals: [
-    { type:"icon",     emoji:"🏗️",            label:"집 짓기 = 웹 개발" },
-  ]},
-  { id: 11, visuals: [
-    { type:"counter",  from:300, to:1,         suffix:"줄의 코드" },
-    { type:"infotip",  title:"코딩의 변화",    items:["예전: 수백 줄 코드","지금: 한글 한 마디"] },
-    { type:"keyword",  text:"한글로 끝",       color:"#4ade80" },
-  ]},
-  { id: 12, visuals: [
-    { type:"infotip",  title:"실제 명령어 예시", items:['"빨간 구매 버튼 가운데에"','"마우스 올리면 커지게"'] },
-  ]},
-  { id: 13, visuals: [
-    { type:"counter",  from:0,  to:3,          suffix:"초 만에 완성" },
-    { type:"icon",     emoji:"✨",             label:"완벽한 화면" },
-  ]},
-  { id: 14, visuals: [
-    { type:"techbadge",label:"내 AI 개발팀",   tags:["Claude","Cursor","v0.dev"] },
-    { type:"keyword",  text:"개인 비서",       color:"#7bb4ff" },
-  ]},
-  { id: 15, visuals: [
-    { type:"keyword",  text:"② 배포 & 호스팅", color:"#fb923c" },
-    { type:"icon",     emoji:"🌐",             label:"전 세계 접속" },
-    { type:"icon",     emoji:"🛣️",            label:"고속도로 = 서버" },
-  ]},
-  { id: 16, visuals: [
-    { type:"infotip",  title:"필요 없는 것",   items:["서버 컴퓨터 구매 ❌","창고 임대 ❌","초기 비용 ❌"] },
-    { type:"keyword",  text:"서버 비용 $0",    color:"#4ade80" },
-  ]},
-  { id: 17, visuals: [
-    { type:"techbadge",label:"무료 호스팅",    tags:["Vercel","Netlify","Railway"] },
-    { type:"icon",     emoji:"🆓",             label:"무료 서버" },
-  ]},
+  // 18: 세 번째 핵심은 '망가뜨리면서 전진하라'는 철학입니다.
   { id: 18, visuals: [
-    { type:"counter",  from:0,  to:1,          suffix:"초 만에 접속" },
-    { type:"icon",     emoji:"🌍",             label:"뉴욕 · 파리 · 서울" },
+    { type:"keyword",  text:"③ 망가뜨리며 전진", color:"#34d399" },
   ]},
+  // 19: 출시했을 때 오류가 날까 봐 걱정되시나요? 아무도 당신의 작은 실수에 관심 없습니다.
   { id: 19, visuals: [
-    { type:"icon",     emoji:"😴",             label:"유저 이탈" },
-    { type:"infotip",  title:"겉만 번지르르하면", items:["기능 없음","유저 이탈","수익 없음"] },
+    { type:"icon",     emoji:"😱",             label:"오류 걱정?" },
+    { type:"keyword",  text:"아무도 관심 없다", color:"#4ade80" },
   ]},
+  // 20: 문제가 생기면 그제야 고치면 됩니다. 오히려 빠른 피드백을 받을 기회죠.
   { id: 20, visuals: [
-    { type:"keyword",  text:"③ AI API 연동",  color:"#34d399" },
-    { type:"icon",     emoji:"🧠",             label:"AI 두뇌 임대" },
+    { type:"infotip",  title:"문제 = 기회",    items:["생기면 고쳐라","빠른 피드백 수집","오히려 유리"] },
   ]},
+  // 21: 제프 베이조스가 말한 '되돌릴 수 있는 문'의 개념을 기억하세요.
   { id: 21, visuals: [
-    { type:"counter",  from:0,  to:100000000000, suffix:"원 학습 비용" },
-    { type:"infotip",  title:"비용 비교",      items:["학습 비용: 1,000억+","우리 비용: 10원/회"] },
-    { type:"counter",  from:100000000000, to:10, suffix:"원" },
+    { type:"icon",     emoji:"🚪",             label:"되돌릴 수 있는 문" },
+    { type:"keyword",  text:"베이조스의 원칙",  color:"#7bb4ff" },
   ]},
+  // 22: 대부분의 결정은 나중에 수정할 수 있습니다. 고민하느라 시간을 버리지 마세요.
   { id: 22, visuals: [
-    { type:"keyword",  text:"API = 마법",      color:"#34d399" },
-    { type:"infotip",  title:"API란?",         items:["초지능의 뇌파를","내 서비스에 복사","실시간 연결"] },
+    { type:"keyword",  text:"고민 = 시간 낭비", color:"#f87171" },
+    { type:"icon",     emoji:"⏱️",             label:"지금 바로 실행" },
   ]},
+  // 23: 네 번째는 '레버리지'를 극대화하는 선택과 집중입니다.
   { id: 23, visuals: [
-    { type:"icon",     emoji:"📸",             label:"사진 → AI 분석" },
-    { type:"counter",  from:0,  to:2,          suffix:"일이면 완성" },
-    { type:"icon",     emoji:"👗",             label:"패션 추천 서비스" },
+    { type:"keyword",  text:"④ 레버리지",      color:"#a78bfa" },
+    { type:"infotip",  title:"레버리지란",      items:["노력 대비 보상 최대화","선택과 집중","에너지 한 곳에"] },
   ]},
+  // 24: 노력 대비 보상이 가장 큰 기능 하나에 모든 에너지를 쏟으세요.
   { id: 24, visuals: [
-    { type:"icon",     emoji:"🧠",             label:"고객 기억" },
+    { type:"icon",     emoji:"🎯",             label:"핵심 기능 하나" },
   ]},
+  // 25: 예쁜 디자인보다 사용자가 원하는 결과에 도달하는 시간을 단축하는 게 핵심입니다.
   { id: 25, visuals: [
-    { type:"infotip",  title:"데이터 = 돈",    items:["방문자 파악","장바구니 분석","맞춤 추천"] },
+    { type:"infotip",  title:"진짜 핵심",      items:["예쁜 디자인 ❌","결과 도달 시간 단축 ✅"] },
   ]},
+  // 26: 그는 로그인조차 생략하고 바로 서비스를 이용하게 만들어 전환율을 높였습니다.
   { id: 26, visuals: [
-    { type:"keyword",  text:"④ 데이터베이스", color:"#60a5fa" },
-    { type:"icon",     emoji:"🗄️",            label:"디지털 창고" },
+    { type:"icon",     emoji:"🔑",             label:"로그인 생략" },
+    { type:"counter",  from:0,  to:300,        suffix:"% 전환율 상승" },
   ]},
+  // 27: 사용자의 귀찮음을 해결해 주는 것, 그것이 가장 가치 있는 기술입니다.
   { id: 27, visuals: [
-    { type:"techbadge",label:"클라우드 DB",    tags:["Supabase","Firebase","PlanetScale"] },
-    { type:"icon",     emoji:"🖱️",            label:"딸깍 연결" },
+    { type:"keyword",  text:"귀찮음 해결 = 돈", color:"#facc15" },
   ]},
+  // 28: 마지막 다섯 번째 비밀은 '서비스 너머의 가치'를 설계하는 것입니다.
   { id: 28, visuals: [
-    { type:"icon",     emoji:"📰",             label:"보안 사고" },
-    { type:"infotip",  title:"보안 방치 시",   items:["개인정보 유출","서비스 폐쇄","뉴스 1면 장식"] },
+    { type:"keyword",  text:"⑤ 서비스 너머",   color:"#f472b6" },
   ]},
+  // 29: 그는 단순히 앱 안에서의 수익만 생각하지 않습니다.
   { id: 29, visuals: [
-    { type:"icon",     emoji:"🔒",             label:"클라우드 보안" },
-    { type:"techbadge",label:"보안 솔루션",    tags:["AWS","Supabase Auth","Clerk"] },
+    { type:"icon",     emoji:"💡",             label:"앱 너머를 본다" },
   ]},
+  // 30: 광고주에게 자신의 영향력을 덤으로 얹어주며 압도적인 제안을 던지죠.
   { id: 30, visuals: [
-    { type:"infotip",  title:"1인 서비스 완성", items:["외관 ✅  프론트엔드","두뇌 ✅  AI API","기억 ✅  데이터베이스"] },
-    { type:"keyword",  text:"1인 서비스 탄생", color:"#f472b6" },
+    { type:"infotip",  title:"압도적인 제안",  items:["앱 수익 + 영향력","패키지로 묶어서","광고주에게 던진다"] },
   ]},
+  // 31: 여러분도 본인이 가진 작은 자원들을 조합해 대체 불가능한 혜택을 만드세요.
   { id: 31, visuals: [
-    { type:"keyword",  text:"⑤ 수익화",       color:"#4ade80" },
-    { type:"icon",     emoji:"💰",             label:"현금 파이프라인" },
+    { type:"keyword",  text:"대체 불가능한 혜택", color:"#aaff00" },
   ]},
+  // 32: 장비 지원이나 무료 컨설팅 같은 사소한 덤이 고객의 마음을 움직입니다.
   { id: 32, visuals: [
-    { type:"infotip",  title:"수익화 ① 광고",  items:["구글 애드센스","클릭마다 달러","초기 설정 10분"] },
+    { type:"icon",     emoji:"🎁",             label:"사소한 덤" },
+    { type:"icon",     emoji:"💝",             label:"고객 마음을 열다" },
   ]},
+  // 33: 지금 AI라는 도구는 모두에게 평등하게 주어졌습니다.
   { id: 33, visuals: [
-    { type:"icon",     emoji:"💵",             label:"광고 수익" },
-    { type:"counter",  from:0,  to:1000,       suffix:"원/클릭" },
+    { type:"techbadge",label:"평등한 도구",    tags:["AI","Claude","ChatGPT","Cursor"] },
   ]},
+  // 34: 차이를 만드는 건 결국 그 도구를 쥐고 얼마나 빨리 움직이느냐의 문제입니다.
   { id: 34, visuals: [
-    { type:"keyword",  text:"수익화 ② 구독",  color:"#fb923c" },
-    { type:"icon",     emoji:"🔄",             label:"반복 수익" },
+    { type:"keyword",  text:"속도가 전부",     color:"#f87171" },
+    { type:"icon",     emoji:"⚡",             label:"얼마나 빨리?" },
   ]},
+  // 35: 남들이 고민만 할 때 당신은 결과물을 시장에 내놓으세요.
   { id: 35, visuals: [
-    { type:"infotip",  title:"구독 모델",      items:["매달 자동 결제","자는 동안 수익","이탈률이 낮음"] },
-    { type:"keyword",  text:"자는 동안 수익",  color:"#4ade80" },
+    { type:"infotip",  title:"남들 vs 당신",  items:["남들: 고민 중...","당신: 이미 출시 ✅"] },
   ]},
+  // 36: 오늘 말씀드린 전략들을 하나씩 적용해 보시길 바랍니다.
   { id: 36, visuals: [
-    { type:"keyword",  text:"한국 → 세계",    color:"#7bb4ff" },
+    { type:"icon",     emoji:"📋",             label:"전략 적용" },
   ]},
+  // 37: 당신도 충분히 할 수 있습니다. 지금 바로 시작하세요.
   { id: 37, visuals: [
-    { type:"techbadge",label:"글로벌 결제",    tags:["Stripe","PayPal","Paddle"] },
-    { type:"infotip",  title:"글로벌 결제 혜택", items:["달러 · 유로 자동 환전","세금 처리 대행","170+ 국가 지원"] },
-  ]},
-  { id: 38, visuals: [
-    { type:"icon",     emoji:"🤔",             label:"어떤 아이템?" },
-  ]},
-  { id: 39, visuals: [
-    { type:"icon",     emoji:"🎯",             label:"검증된 시장" },
-  ]},
-  { id: 40, visuals: [
-    { type:"counter",  from:0,  to:500000,     suffix:"원짜리 컨설팅" },
-    { type:"icon",     emoji:"👔",             label:"비싼 전문가" },
-  ]},
-  { id: 41, visuals: [
-    { type:"counter",  from:500000, to:10,     suffix:"원으로 자동화" },
-    { type:"keyword",  text:"시장 파괴",       color:"#f87171" },
-  ]},
-  { id: 42, visuals: [
-    { type:"infotip",  title:"기회 공식",      items:["남의 비효율","= 내 마진","= 내 기회"] },
-  ]},
-  { id: 43, visuals: [
-    { type:"icon",     emoji:"🗑️",            label:"완벽주의 버려라" },
-    { type:"infotip",  title:"흔한 실수",      items:["완벽한 기획 ❌","1년 개발 ❌","한 번에 출시 ❌"] },
-  ]},
-  { id: 44, visuals: [
-    { type:"keyword",  text:"MVP 먼저",        color:"#facc15" },
-    { type:"infotip",  title:"MVP 전략",       items:["엉성해도 출시","반응 먼저 확인","개선은 그 다음"] },
-  ]},
-  { id: 45, visuals: [
-    { type:"infotip",  title:"성장 3단계",     items:["① 출시 (엉성 OK)","② 개선 (손잡이)","③ 스케일 (엔진)"] },
-    { type:"icon",     emoji:"🚀",             label:"스케일업" },
-  ]},
-  { id: 46, visuals: [
-    { type:"icon",     emoji:"📊",             label:"사용자 분석" },
-    { type:"techbadge",label:"분석 툴",        tags:["Hotjar","GA4","Mixpanel"] },
-  ]},
-  { id: 47, visuals: [
-    { type:"infotip",  title:"데이터 기반 개선", items:["스크롤 깊이 분석","클릭 히트맵","A/B 테스트"] },
-    { type:"icon",     emoji:"🔧",             label:"실시간 개선" },
-  ]},
-  { id: 48, visuals: [
-    { type:"keyword",  text:"폭발점",          color:"#f87171" },
-    { type:"icon",     emoji:"💥",             label:"결제 폭발" },
-  ]},
-  { id: 49, visuals: [
-    { type:"keyword",  text:"⑥ 모바일 앱",    color:"#a78bfa" },
-    { type:"icon",     emoji:"📱",             label:"앱 확장" },
-  ]},
-  { id: 50, visuals: [
-    { type:"infotip",  title:"앱 개발 방법",   items:["① PWA (웹 래핑)","② React Native","③ Flutter"] },
-    { type:"icon",     emoji:"🔄",             label:"웹 → 앱 변환" },
-  ]},
-  { id: 51, visuals: [
-    { type:"techbadge",label:"크로스플랫폼",   tags:["iOS","Android"] },
-    { type:"icon",     emoji:"🤖",             label:"AI가 대신 개발" },
-  ]},
-  { id: 52, visuals: [
-    { type:"icon",     emoji:"⚠️",             label:"앱 심사 주의" },
-  ]},
-  { id: 53, visuals: [
-    { type:"infotip",  title:"앱 거절 사유",   items:["기능 없는 껍데기","복제앱","콘텐츠 부족"] },
-    { type:"icon",     emoji:"🍎",             label:"앱스토어 심사" },
-  ]},
-  { id: 54, visuals: [
-    { type:"infotip",  title:"필수 네이티브 기능", items:["푸시 알림 🔔","카메라 📸","GPS 📍"] },
-    { type:"icon",     emoji:"📱",             label:"네이티브 경험" },
-  ]},
-  { id: 55, visuals: [
-    { type:"keyword",  text:"1인 = 중소기업", color:"#4ade80" },
-    { type:"icon",     emoji:"🏭",             label:"현금 창출 기계" },
-  ]},
-  { id: 56, visuals: [
-    { type:"icon",     emoji:"🛤️",            label:"인생의 갈림길" },
-  ]},
-  { id: 57, visuals: [
-    { type:"counter",  from:0, to:30000000,   suffix:"원/월" },
-    { type:"icon",     emoji:"🏝️",            label:"디지털 노마드" },
-  ]},
-  { id: 58, visuals: [
-    { type:"counter",  from:0, to:30000000000, suffix:"원 엑싯" },
-    { type:"icon",     emoji:"🤝",             label:"인수합병" },
-  ]},
-  { id: 59, visuals: [
-    { type:"icon",     emoji:"🇺🇸",            label:"미국 법인" },
-    { type:"infotip",  title:"VC 투자 유치",   items:["시드: 수억 원","시리즈A: 수십억","시리즈B: 수백억"] },
-  ]},
-  { id: 60, visuals: [
-    { type:"keyword",  text:"NASDAQ 🔔",       color:"#facc15" },
-    { type:"icon",     emoji:"📈",             label:"글로벌 상장" },
-  ]},
-  { id: 61, visuals: [
-    { type:"keyword",  text:"내일 당장 시작",  color:"#7bb4ff" },
-    { type:"infotip",  title:"필요한 것",      items:["아이디어 ✅","노트북 ✅","의지 ✅","코딩 실력 ❌"] },
-  ]},
-  { id: 62, visuals: [
-    { type:"icon",     emoji:"💡",             label:"잠든 아이디어" },
-    { type:"keyword",  text:"세상을 바꿀 아이디어", color:"#facc15" },
-  ]},
-  { id: 63, visuals: [
-    { type:"icon",     emoji:"💬",             label:"AI에게 명령" },
-    { type:"keyword",  text:"지금 바로 시작",  color:"#4ade80" },
-  ]},
-  { id: 64, visuals: [
-    { type:"icon",     emoji:"🔥",             label:"열정에 불을" },
-  ]},
-  { id: 65, visuals: [
-    { type:"icon",     emoji:"💥",             label:"시너지 폭발" },
-  ]},
-  { id: 66, visuals: [
-    { type:"none" },
+    { type:"keyword",  text:"지금 바로 시작",  color:"#aaff00" },
+    { type:"icon",     emoji:"🚀",             label:"당신도 할 수 있다" },
   ]},
 ];
 
@@ -560,7 +473,7 @@ const IntroOverlay: React.FC = () => {
           letterSpacing: "0.3em",
           fontFamily: "'Apple SD Gothic Neo','Noto Sans KR',sans-serif",
           marginBottom: 16,
-        }}>감각적 빌딩</div>
+        }}>바이브 코더</div>
         <div style={{
           width: 60, height: 2, margin: "0 auto",
           background: "linear-gradient(90deg,transparent,#7bb4ff,transparent)",
