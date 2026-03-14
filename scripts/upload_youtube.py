@@ -8,6 +8,7 @@ YouTube 자동 업로드 스크립트
 import os
 import sys
 import json
+import argparse
 from pathlib import Path
 
 ROOT         = Path(__file__).parent.parent
@@ -18,6 +19,15 @@ THUMB_FILE   = ROOT / "out" / "thumbnail.png"
 METADATA_FILE= ROOT / "youtube_metadata.txt"
 
 SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+
+
+def parse_upload_args():
+    parser = argparse.ArgumentParser(description="YouTube 업로드")
+    parser.add_argument("--token-path", default=None, help="OAuth 토큰 경로 (채널별)")
+    parser.add_argument("--video-path", default=None, help="업로드할 영상 경로")
+    parser.add_argument("--thumb-path", default=None, help="썸네일 경로")
+    parser.add_argument("--metadata-path", default=None, help="메타데이터(.txt) 경로")
+    return parser.parse_args()
 
 
 def check_files():
@@ -74,9 +84,10 @@ def get_credentials():
     from google_auth_oauthlib.flow import InstalledAppFlow
     from google.auth.transport.requests import Request
 
+    token_path = Path(TOKEN_FILE)
     creds = None
-    if TOKEN_FILE.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
+    if token_path.exists():
+        creds = Credentials.from_authorized_user_file(str(token_path), SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -84,7 +95,7 @@ def get_credentials():
         else:
             flow = InstalledAppFlow.from_client_secrets_file(str(SECRET_FILE), SCOPES)
             creds = flow.run_local_server(port=0)
-        TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
+        token_path.write_text(creds.to_json(), encoding="utf-8")
 
     return creds
 
@@ -149,4 +160,14 @@ def upload():
 
 
 if __name__ == "__main__":
+    args = parse_upload_args()
+    # 동적 경로 오버라이드 (채널별 OAuth 토큰 격리)
+    if args.token_path:
+        TOKEN_FILE = Path(args.token_path)
+    if args.video_path:
+        VIDEO_FILE = Path(args.video_path)
+    if args.thumb_path:
+        THUMB_FILE = Path(args.thumb_path)
+    if args.metadata_path:
+        METADATA_FILE = Path(args.metadata_path)
     upload()

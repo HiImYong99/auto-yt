@@ -1,0 +1,8 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "types": ["node"]
+  },
+  "include": ["src/core/**/*", "src/cli/**/*", "src/web/**/*"]
+}

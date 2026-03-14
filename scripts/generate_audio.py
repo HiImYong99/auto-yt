@@ -18,11 +18,16 @@ ROOT = Path(__file__).parent.parent
 SCRIPT_FILE = ROOT / "vibe.txt"
 AUDIO_FILE = ROOT / "public" / "audio.mp3"
 SYNC_FILE = ROOT / "src" / "data" / "sync_data.json"
+_VOICE_ID_OVERRIDE: str | None = None  # parse_args()에서 설정
 
 
 def parse_args():
     parser = argparse.ArgumentParser(description="ElevenLabs TTS + Sync Data Generator")
     parser.add_argument("--force", action="store_true", help="캐시 무시하고 강제 재생성")
+    parser.add_argument("--voice-id", default=None, help="ElevenLabs Voice ID (채널별 오버라이드)")
+    parser.add_argument("--script-file", default=None, help="대본 파일 경로 (기본값: vibe.txt)")
+    parser.add_argument("--audio-out", default=None, help="오디오 출력 경로 (기본값: public/audio.mp3)")
+    parser.add_argument("--sync-out", default=None, help="싱크 데이터 출력 경로 (기본값: src/data/sync_data.json)")
     return parser.parse_args()
 
 
@@ -41,7 +46,7 @@ def generate_tts_with_timestamps(text: str) -> dict:
     alignment 응답에서 단어별 start/end 시간(ms)을 파싱.
     """
     api_key = os.getenv("ELEVENLABS_API_KEY")
-    voice_id = os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")  # Rachel (기본값)
+    voice_id = _VOICE_ID_OVERRIDE or os.getenv("ELEVENLABS_VOICE_ID", "21m00Tcm4TlvDq8ikWAM")  # Rachel (기본값)
 
     if not api_key or api_key == "your_key_here":
         raise ValueError(
@@ -180,7 +185,18 @@ def save_sync_data(sync_data: dict) -> None:
 
 
 def main():
+    global _VOICE_ID_OVERRIDE, SCRIPT_FILE, AUDIO_FILE, SYNC_FILE
+
     args = parse_args()
+
+    # 동적 경로/옵션 오버라이드
+    _VOICE_ID_OVERRIDE = args.voice_id
+    if args.script_file:
+        SCRIPT_FILE = Path(args.script_file)
+    if args.audio_out:
+        AUDIO_FILE = Path(args.audio_out)
+    if args.sync_out:
+        SYNC_FILE = Path(args.sync_out)
 
     # 캐시 확인
     if not args.force and is_cached():

@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>auto-yt 대시보드</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    .log-box { scrollbar-width: thin; scrollbar-color: #374151 #111827; }
+    .log-box::-webkit-scrollbar { width: 5px; }
+    .log-box::-webkit-scrollbar-track { background: #111827; }
+    .log-box::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spin { animation: spin 1s linear infinite; display: inline-block; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+    .pulse { animation: pulse 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen p-5">
+
+<div class="max-w-6xl mx-auto space-y-5">
+
+  <!-- 헤더 -->
+  <div class="flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <span class="text-xl">🎬</span>
+      <div>
+        <h1 class="text-lg font-bold">auto-yt 멀티채널 대시보드</h1>
+        <p class="text-xs text-gray-500">최대 3채널 동시 실행</p>
+      </div>
+    </div>
+    <div id="concurrentBadge" class="text-xs px-2.5 py-1 rounded-full bg-gray-800 text-gray-400">
+      0 / 3 실행 중
+    </div>
+  </div>
+
+  <!-- 새 파이프라인 시작 폼 -->
+  <div class="bg-gray-900 rounded-2xl p-5 border border-gray-800">
+    <h2 class="text-sm font-semibold text-gray-400 mb-3">새 파이프라인 시작</h2>
+    <div class="flex gap-2 flex-wrap">
+      <select id="channelSelect"
+        class="flex-shrink-0 w-48 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-indigo-500">
+        <option value="">채널 선택...</option>
+      </select>
+      <input id="urlInput" type="url" placeholder="https://www.youtube.com/watch?v=..."
+        class="flex-1 min-w-0 bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-sm text-white placeholder-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+      <button id="startBtn"
+        class="flex-shrink-0 bg-indigo-600 hover:bg-indigo-500 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed text-white font-semibold px-5 py-2 rounded-lg text-sm transition-colors">
+        ▶ 시작
+      </button>
+    </div>
+    <p id="startErr" class="text-red-400 text-xs mt-2 hidden"></p>
+  </div>
+
+  <!-- 잡 카드 그리드 -->
+  <div id="jobsGrid" class="grid gap-4" style="grid-template-columns: repeat(auto-fill, minmax(320px, 1fr))">
+    <div id="emptyState" class="col-span-full text-center py-16 text-gray-700 text-sm">
+      실행 중인 파이프라인이 없습니다.<br>위에서 채널과 URL을 선택하고 시작하세요.
+    </div>
+  </div>
+
+</div>
+
+<script>
+const channelSelect = document.getElementById('channelSelect');
+const urlInput = document.getElementById('urlInput');
+const startBtn = document.getElementById('startBtn');
+const startErr = document.getElementById('startErr');
+const jobsGrid = document.getElementById('jobsGrid');
+const emptyState = document.getElementById('emptyState');
+const concurrentBadge = document.getElementById('concurrentBadge');
+
+const STATUS = {
+  scripting: { label: '대본 생성 중',    color: 'bg-blue-500',   spin: true  },
+  tts:       { label: 'TTS 생성 중',     color: 'bg-yellow-500', spin: true  },
+  rendering: { label: '영상 렌더 중',    color: 'bg-purple-500', spin: true  },
+  uploading: { label: 'YouTube 업로드',  color: 'bg-orange-500', spin: true  },
+  completed: { label: '완료',            color: 'bg-green-500',  spin: false },
+  error:     { label: '오류',            color: 'bg-red-500',    spin: false },
+  cancelled: { label: '취소됨',          color: 'bg-gray-500',   spin: false },
+};
+
+// jobId → 마지막으로 렌더한 로그 수
+const logCounts = {};
+
+// ── 채널 목록 로드 ─────────────────────────────────────────
+async function loadChannels() {
+  try {
+    const channels = await fetch('/api/channels').then(r => r.json());
+    channelSelect.innerHTML = '<option value="">채널 선택...</option>' +
+      channels.map(c => `<option value="${c.channelId}">${c.channelName}</option>`).join('');
+  } catch {
+    channelSelect.innerHTML = '<option value="">로드 실패</option>';
+  }
+}
+
+// ── 잡 카드 렌더링 ────────────────────────────────────────
+function getOrCreateCard(jobId) {
+  let card = document.getElementById(`card-${jobId}`);
+  if (!card) {
+    card = document.createElement('div');
+    card.id = `card-${jobId}`;
+    card.className = 'bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden flex flex-col';
+    card.innerHTML = `
+      <div class="p-4 flex-1">
+        <div class="flex items-start justify-between gap-2 mb-1">
+          <div>
+            <div class="font-semibold text-sm job-channel"></div>
+            <div class="text-xs text-gray-500 job-url truncate max-w-xs mt-0.5"></div>
+          </div>
+          <span class="text-xs font-mono text-gray-600 flex-shrink-0">${jobId}</span>
+        </div>
+
+        <!-- 상태 + 진행률 -->
+        <div class="flex items-center gap-2 mt-3 mb-1">
+          <div class="job-dot w-2 h-2 rounded-full flex-shrink-0"></div>
+          <span class="job-status text-xs font-medium text-gray-300"></span>
+          <span class="job-pct text-xs text-gray-500 ml-auto"></span>
+        </div>
+        <div class="w-full bg-gray-800 rounded-full h-1.5 mb-3">
+          <div class="job-bar h-1.5 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all duration-500" style="width:0%"></div>
+        </div>
+
+        <!-- 에러 상세 -->
+        <div class="job-err hidden bg-red-950 border border-red-800 rounded-lg p-2 mb-3 text-xs text-red-400 font-mono break-all"></div>
+
+        <!-- 로그 -->
+        <div class="log-box bg-gray-950 rounded-lg p-2.5 h-36 overflow-y-auto font-mono text-xs text-gray-500 space-y-px"></div>
+      </div>
+
+      <!-- 액션 버튼 -->
+      <div class="px-4 py-3 border-t border-gray-800 flex gap-2">
+        <button class="btn-cancel flex-1 bg-gray-700 hover:bg-red-900 text-gray-300 hover:text-red-300 text-xs py-1.5 rounded-lg transition-colors">취소</button>
+        <button class="btn-clear flex-1 bg-gray-800 hover:bg-gray-700 text-gray-400 text-xs py-1.5 rounded-lg transition-colors hidden">제거</button>
+      </div>
+    `;
+
+    card.querySelector('.btn-cancel').addEventListener('click', () => cancelJob(jobId));
+    card.querySelector('.btn-clear').addEventListener('click', () => clearJobCard(jobId));
+
+    emptyState.remove();
+    jobsGrid.appendChild(card);
+    logCounts[jobId] = 0;
+  }
+  return card;
+}
+
+function applyJobState(state) {
+  const card = getOrCreateCard(state.jobId);
+  const info = STATUS[state.status] || STATUS.error;
+
+  card.querySelector('.job-channel').textContent = state.channelName;
+  card.querySelector('.job-url').textContent = state.youtubeUrl;
+  card.querySelector('.job-dot').className = `job-dot w-2 h-2 rounded-full flex-shrink-0 ${info.color}${info.spin ? ' pulse' : ''}`;
+  card.querySelector('.job-status').textContent = info.label;
+  card.querySelector('.job-pct').textContent = `${state.progress}%`;
+  card.querySelector('.job-bar').style.width = `${state.progress}%`;
+
+  // 에러 배너
+  const errEl = card.querySelector('.job-err');
+  if (state.errorDetail && state.status === 'error') {
+    errEl.textContent = state.errorDetail;
+    errEl.classList.remove('hidden');
+  } else {
+    errEl.classList.add('hidden');
+  }
+
+  // 새 로그만 추가
+  const logBox = card.querySelector('.log-box');
+  const prev = logCounts[state.jobId] || 0;
+  if (state.logs && state.logs.length > prev) {
+    if (prev === 0) logBox.innerHTML = '';
+    state.logs.slice(prev).forEach(line => {
+      const div = document.createElement('div');
+      const isErr = line.includes('[ERROR]') || line.includes('[err]');
+      div.className = isErr ? 'text-red-400' : 'text-gray-500';
+      div.textContent = line;
+      logBox.appendChild(div);
+    });
+    logBox.scrollTop = logBox.scrollHeight;
+    logCounts[state.jobId] = state.logs.length;
+  }
+
+  // 버튼 상태
+  const busy = ['scripting', 'tts', 'rendering', 'uploading'].includes(state.status);
+  const done = ['completed', 'error', 'cancelled'].includes(state.status);
+  card.querySelector('.btn-cancel').classList.toggle('hidden', !busy);
+  card.querySelector('.btn-clear').classList.toggle('hidden', !done);
+}
+
+function removeCard(jobId) {
+  document.getElementById(`card-${jobId}`)?.remove();
+  delete logCounts[jobId];
+  if (jobsGrid.querySelectorAll('[id^="card-"]').length === 0) {
+    jobsGrid.appendChild(emptyState);
+  }
+}
+
+// ── SSE ───────────────────────────────────────────────────
+function connectSSE() {
+  const es = new EventSource('/api/events');
+  let known = new Set();
+
+  es.onmessage = (e) => {
+    try {
+      const { jobs } = JSON.parse(e.data);
+      const current = new Set(Object.keys(jobs));
+
+      // 새 잡 or 갱신
+      for (const [id, state] of Object.entries(jobs)) applyJobState(state);
+
+      // 없어진 잡 카드 제거 (clearJob 호출 후)
+      for (const id of known) {
+        if (!current.has(id)) removeCard(id);
+      }
+      known = current;
+
+      // 동시 실행 배지
+      const busy = Object.values(jobs).filter(s => ['scripting','tts','rendering','uploading'].includes(s.status)).length;
+      concurrentBadge.textContent = `${busy} / 3 실행 중`;
+      concurrentBadge.className = `text-xs px-2.5 py-1 rounded-full ${busy > 0 ? 'bg-indigo-900 text-indigo-300' : 'bg-gray-800 text-gray-400'}`;
+
+      // 시작 버튼 활성화
+      startBtn.disabled = busy >= 3;
+    } catch {}
+  };
+
+  es.onerror = () => setTimeout(connectSSE, 2000);
+}
+
+// ── API 액션 ──────────────────────────────────────────────
+async function cancelJob(jobId) {
+  await fetch('/api/cancel', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) });
+}
+
+async function clearJobCard(jobId) {
+  await fetch('/api/clear', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jobId }) });
+}
+
+// ── 시작 버튼 ─────────────────────────────────────────────
+startBtn.addEventListener('click', async () => {
+  const channelId = channelSelect.value;
+  const youtubeUrl = urlInput.value.trim();
+  startErr.classList.add('hidden');
+
+  if (!channelId) { showErr('채널을 선택하세요.'); return; }
+  if (!youtubeUrl) { showErr('YouTube URL을 입력하세요.'); return; }
+
+  startBtn.disabled = true;
+  try {
+    const res = await fetch('/api/start', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ channelId, youtubeUrl }),
+    });
+    const data = await res.json();
+    if (!res.ok) { showErr(data.error || '시작 실패'); startBtn.disabled = false; return; }
+    urlInput.value = '';
+  } catch {
+    showErr('서버 연결 실패');
+    startBtn.disabled = false;
+  }
+});
+
+function showErr(msg) {
+  startErr.textContent = msg;
+  startErr.classList.remove('hidden');
+}
+
+loadChannels();
+connectSSE();
+</script>
+</body>
+</html>

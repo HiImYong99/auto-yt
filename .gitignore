@@ -6,10 +6,19 @@
 client_secret.json
 token.json
 
-# 생성 산출물
+# 생성 산출물 및 데이터
 out/
-public/audio.mp3
+output/
+tokens/
+vibe.txt
+youtube_metadata.txt
+youtube_metadata.json
 src/data/sync_data.json
+src/data/scene_plan.json
+src/data/thumbnail_data.json
+public/audio.mp3
+pipeline.state.json
+debug_raw_response.txt
 
 # Node
 node_modules/

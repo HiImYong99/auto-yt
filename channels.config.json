@@ -1,0 +1,25 @@
+{
+  "channels": [
+    {
+      "channelId": "UCzkKP8-d53vdZiQ1PmPysBQ",
+      "channelName": "바이브빌더",
+      "voiceId": "7Nah3cbXKVmGX7gQUuwz",
+      "youtubeAuthTokenPath": "./token.json",
+      "systemPrompt": ""
+    },
+    {
+      "channelId": "UCzkKP8-d53vdZiQ1PmPysBQ",
+      "channelName": "바이브빌더",
+      "voiceId": "7Nah3cbXKVmGX7gQUuwz",
+      "youtubeAuthTokenPath": "./token.json",
+      "systemPrompt": ""
+    },
+    {
+      "channelId": "UCzkKP8-d53vdZiQ1PmPysBQ",
+      "channelName": "바이브빌더",
+      "voiceId": "7Nah3cbXKVmGX7gQUuwz",
+      "youtubeAuthTokenPath": "./token.json",
+      "systemPrompt": ""
+    }
+  ]
+}
