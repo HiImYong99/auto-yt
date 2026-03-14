@@ -1,152 +1,142 @@
 """
 YouTube 자동 업로드 스크립트
-- out/video.mp4 + out/thumbnail.png + youtube_metadata.txt 를 유튜브에 업로드
-- 사전 조건: client_secret.json (Google Cloud Console에서 다운로드)
-- OAuth 토큰은 token.json에 캐싱 (2회차부터 브라우저 없이 자동 실행)
+
+사용법:
+  python3 scripts/upload_youtube.py --channel vibe
+  python3 scripts/upload_youtube.py   # 레거시
 """
 
-import os
-import sys
 import json
+import sys
+import argparse
 from pathlib import Path
-
-ROOT         = Path(__file__).parent.parent
-SECRET_FILE  = ROOT / "client_secret.json"
-TOKEN_FILE   = ROOT / "token.json"
-VIDEO_FILE   = ROOT / "out" / "video.mp4"
-THUMB_FILE   = ROOT / "out" / "thumbnail.png"
-METADATA_FILE= ROOT / "youtube_metadata.txt"
-
-SCOPES = ["https://www.googleapis.com/auth/youtube.upload"]
+from config import ROOT, SCOPES, get_channel
 
 
-def check_files():
-    if not SECRET_FILE.exists():
+def resolve_paths(channel_id: str | None) -> dict:
+    if channel_id:
+        auth, ch = get_channel(channel_id)  # defaults 이미 머지됨
+        out_dir = ROOT / ch["output_dir"]
+        return {
+            "secret": ROOT / auth["client_secret"],
+            "token": ROOT / ch["token"],
+            "video": out_dir / "video.mp4",
+            "thumbnail": out_dir / "thumbnail.png",
+            "metadata_json": out_dir / "metadata.json",
+            "privacy": ch.get("youtube_privacy", "private"),
+            "category_id": ch.get("category_id", "22"),
+        }
+    return {
+        "secret": ROOT / "client_secret.json",
+        "token": ROOT / "token.json",
+        "video": ROOT / "out" / "video.mp4",
+        "thumbnail": ROOT / "out" / "thumbnail.png",
+        "metadata_json": ROOT / "youtube_metadata.json",
+        "privacy": "private",
+        "category_id": "22",
+    }
+
+
+def check_files(paths: dict) -> None:
+    if not paths["secret"].exists():
         print("=" * 60)
-        print("client_secret.json 이 없습니다.")
-        print()
-        print("1회 설정 방법:")
-        print("  1. https://console.cloud.google.com 접속")
-        print("  2. 새 프로젝트 생성 → YouTube Data API v3 활성화")
-        print("  3. 사용자 인증 정보 → OAuth 2.0 클라이언트 ID 생성 (데스크톱 앱)")
-        print("  4. JSON 다운로드 → auto-yt/client_secret.json 으로 저장")
+        print(f"client_secret.json 없음: {paths['secret']}")
+        print("  1. https://console.cloud.google.com")
+        print("  2. YouTube Data API v3 활성화")
+        print("  3. OAuth 2.0 클라이언트 ID 생성 (데스크톱 앱)")
+        print(f"  4. JSON 다운로드 → {paths['secret']} 로 저장")
         print("=" * 60)
         sys.exit(1)
-
-    for f in [VIDEO_FILE, THUMB_FILE, METADATA_FILE]:
-        if not f.exists():
-            print(f"파일 없음: {f}")
-            sys.exit(1)
+    if not paths["video"].exists():
+        print(f"영상 파일 없음: {paths['video']}")
+        sys.exit(1)
 
 
-def parse_metadata():
-    """youtube_metadata.txt 에서 제목, 설명, 태그 파싱"""
-    text = METADATA_FILE.read_text(encoding="utf-8")
-    sections = {}
-    current = None
-
-    for line in text.splitlines():
-        if line.startswith("■ "):
-            current = line[2:].strip()
-            sections[current] = []
-        elif current:
-            sections[current].append(line)
-
-    title = "\n".join(sections.get("제목", [])).strip()
-
-    # 설명에서 태그 제거 (마지막 줄 #태그 라인)
-    desc_lines = sections.get("설명", [])
-    description = "\n".join(desc_lines).strip()
-
-    # 태그 파싱: 마지막 줄의 #태그 형태
-    tags = []
-    for line in reversed(desc_lines):
-        line = line.strip()
-        if line.startswith("#"):
-            tags = [t.lstrip("#") for t in line.split()]
-            break
-
-    return title, description, tags
+def parse_metadata(paths: dict) -> tuple[str, str, list[str]]:
+    meta = paths["metadata_json"]
+    if not meta.exists():
+        raise FileNotFoundError(f"메타데이터 없음: {meta}")
+    data = json.loads(meta.read_text(encoding="utf-8"))
+    return data.get("title", ""), data.get("description", ""), data.get("tags", [])
 
 
-def get_credentials():
+def get_credentials(paths: dict):
     from google.oauth2.credentials import Credentials
     from google_auth_oauthlib.flow import InstalledAppFlow
     from google.auth.transport.requests import Request
 
+    token_file = paths["token"]
     creds = None
-    if TOKEN_FILE.exists():
-        creds = Credentials.from_authorized_user_file(str(TOKEN_FILE), SCOPES)
+    if token_file.exists():
+        creds = Credentials.from_authorized_user_file(str(token_file), SCOPES)
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            flow = InstalledAppFlow.from_client_secrets_file(str(SECRET_FILE), SCOPES)
+            flow = InstalledAppFlow.from_client_secrets_file(str(paths["secret"]), SCOPES)
             creds = flow.run_local_server(port=0)
-        TOKEN_FILE.write_text(creds.to_json(), encoding="utf-8")
-
+        token_file.parent.mkdir(parents=True, exist_ok=True)
+        token_file.write_text(creds.to_json(), encoding="utf-8")
     return creds
 
 
-def upload():
+def upload(channel_id: str | None = None) -> str:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
 
-    check_files()
+    paths = resolve_paths(channel_id)
+    check_files(paths)
 
-    title, description, tags = parse_metadata()
-    print(f"제목: {title}")
-    print(f"태그: {tags}")
-    print()
+    title, description, tags = parse_metadata(paths)
+    label = f"[{channel_id}] " if channel_id else ""
+    print(f"{label}제목: {title}")
+    print(f"{label}태그: {tags}\n")
 
-    print("Google 인증 중...")
-    creds = get_credentials()
+    creds = get_credentials(paths)
     youtube = build("youtube", "v3", credentials=creds)
 
-    # 영상 업로드
-    print("영상 업로드 중...")
-    body = {
-        "snippet": {
-            "title": title,
-            "description": description,
-            "tags": tags,
-            "categoryId": "22",  # People & Blogs
-            "defaultLanguage": "ko",
+    print(f"{label}영상 업로드 중: {paths['video']}")
+    request = youtube.videos().insert(
+        part="snippet,status",
+        body={
+            "snippet": {
+                "title": title,
+                "description": description,
+                "tags": tags,
+                "categoryId": paths["category_id"],
+                "defaultLanguage": "ko",
+            },
+            "status": {"privacyStatus": paths["privacy"]},
         },
-        "status": {
-            "privacyStatus": "private",  # 업로드 후 직접 공개 설정 권장
-        },
-    }
-
-    media = MediaFileUpload(str(VIDEO_FILE), chunksize=-1, resumable=True)
-    request = youtube.videos().insert(part="snippet,status", body=body, media_body=media)
+        media_body=MediaFileUpload(str(paths["video"]), chunksize=-1, resumable=True),
+    )
 
     response = None
     while response is None:
         status, response = request.next_chunk()
         if status:
-            pct = int(status.progress() * 100)
-            print(f"  업로드 {pct}%...", end="\r")
+            print(f"{label}  {int(status.progress() * 100)}%...", end="\r")
 
     video_id = response["id"]
-    print(f"\n영상 업로드 완료: https://youtu.be/{video_id}")
+    print(f"\n{label}업로드 완료: https://youtu.be/{video_id}")
 
-    # 썸네일 업로드
-    print("썸네일 업로드 중...")
-    youtube.thumbnails().set(
-        videoId=video_id,
-        media_body=MediaFileUpload(str(THUMB_FILE))
-    ).execute()
-    print("썸네일 업로드 완료")
+    if paths["thumbnail"].exists():
+        youtube.thumbnails().set(
+            videoId=video_id,
+            media_body=MediaFileUpload(str(paths["thumbnail"])),
+        ).execute()
+        print(f"{label}썸네일 완료")
 
-    print()
-    print("=" * 60)
-    print(f"✅ 업로드 완료!")
-    print(f"   영상: https://youtu.be/{video_id}")
-    print(f"   상태: 비공개 (YouTube Studio에서 공개로 변경하세요)")
-    print("=" * 60)
+    print(f"\n{'='*60}\n{label}영상: https://youtu.be/{video_id} ({paths['privacy']})\n{'='*60}")
+    return video_id
+
+
+def main():
+    parser = argparse.ArgumentParser(description="YouTube 업로드")
+    parser.add_argument("--channel", help="채널 ID (channels.json 키)")
+    upload(parser.parse_args().channel)
 
 
 if __name__ == "__main__":
-    upload()
+    main()

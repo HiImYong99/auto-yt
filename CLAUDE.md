@@ -3,58 +3,95 @@
 ## 프로젝트 목적
 `vibe.txt` 대본 파일을 입력으로 받아, ElevenLabs TTS + Remotion을 이용해 유튜브 영상을 자동 생성하는 파이프라인.
 
+## 멀티채널 구조
+
+### channels.json - 채널 레지스트리
+```json
+{
+  "channels": {
+    "vibe": {
+      "display_name": "바이브코더",
+      "voice_id": "7Nah3cbXKVmGX7gQUuwz",
+      "client_secret": "secrets/vibe/client_secret.json",
+      "token": "secrets/vibe/token.json",
+      "output_dir": "output/vibe"
+    }
+  }
+}
+```
+
+### 대본 파일 명명 규칙
+- `{channel_id}__{이름}.txt` → 채널 자동 감지
+- 예: `vibe__2026ai.txt`, `kdrama__news_apr.txt`
+
+### 채널별 디렉토리
+```
+secrets/{channel_id}/
+  client_secret.json   ← Google OAuth (gitignored)
+  token.json           ← OAuth 캐시 (gitignored)
+
+output/{channel_id}/
+  audio.mp3            ← TTS 출력
+  sync_data.json       ← 타임스탬프
+  video.mp4            ← 최종 렌더
+  metadata.json        ← YouTube 메타데이터
+```
+
 ## 핵심 파일 맵
 | 파일 | 역할 |
 |------|------|
-| `vibe.txt` | 원본 대본 (한국어) |
-| `scripts/generate_audio.py` | ElevenLabs TTS 호출 → `public/audio.mp3` + `src/data/sync_data.json` 생성 |
-| `src/data/sync_data.json` | 단어/문장 단위 타임스탬프 (ms 단위) |
-| `public/audio.mp3` | TTS 오디오 |
-| `src/components/Root.tsx` | Remotion 루트, 컴포지션 등록 |
-| `src/components/MainVideo.tsx` | 메인 영상 컴포지션 (오디오 + 자막 + 비주얼) |
-| `src/components/Subtitle.tsx` | 타임스탬프 기반 자막 렌더러 (단어 하이라이트) |
-| `src/components/Visuals.tsx` | 배경 그라데이션 + 파티클 모션 |
-| `youtube_metadata.json` | SEO 최적화 제목/설명/태그 |
-| `.env` | API 키 (ELEVENLABS_API_KEY, ELEVENLABS_VOICE_ID) |
+| `channels.json` | 채널별 voice_id, OAuth, 출력 경로 설정 |
+| `scripts/run_pipeline.py` | **메인 오케스트레이터** (멀티채널 병렬 처리) |
+| `scripts/generate_audio.py` | ElevenLabs TTS → `output/{channel}/audio.mp3` |
+| `scripts/upload_youtube.py` | YouTube 업로드 (채널별 OAuth) |
+| `src/components/MainVideo.tsx` | 메인 영상 컴포지션 |
+| `src/components/Subtitle.tsx` | 타임스탬프 기반 자막 |
+| `src/components/Visuals.tsx` | 배경 그라데이션 + 파티클 |
+| `youtube_metadata.json` | SEO 메타데이터 (기본값) |
+| `.env` | ELEVENLABS_API_KEY |
 
 ## 워크플로우
 
-### 1. 대본 변경 시
+### 멀티채널 파이프라인 (권장)
 ```bash
-# vibe.txt 수정 후
+# 단일 채널 (파일명에서 자동 감지):
+python3 scripts/run_pipeline.py vibe__2026ai.txt
+
+# 여러 채널 동시 처리:
+python3 scripts/run_pipeline.py vibe__2026ai.txt kdrama__news.txt
+
+# 채널 명시:
+python3 scripts/run_pipeline.py --channel vibe vibe.txt
+
+# 인터랙티브:
+python3 scripts/run_pipeline.py
+
+# 단계 스킵:
+python3 scripts/run_pipeline.py vibe__script.txt --skip-tts --skip-render
+```
+
+### 동시성 방식
+- **Phase 1 (TTS)**: 병렬 (채널별 독립 API 호출)
+- **Phase 2 (Render)**: 순차 (Remotion 공유 파일 의존)
+- **Phase 3 (Upload)**: 병렬 (채널별 독립 OAuth)
+
+### 새 채널 추가 방법
+1. `channels.json`에 채널 추가
+2. `secrets/{channel_id}/client_secret.json` 생성 (Google Cloud Console)
+3. 대본 파일 `{channel_id}__script.txt` 작성
+4. `python3 scripts/run_pipeline.py {channel_id}__script.txt`
+
+### 레거시 (단일 채널 방식)
+```bash
 python3 scripts/generate_audio.py --force
-npm start   # Remotion Studio에서 미리보기
-```
-
-### 2. 최초 실행 (캐시 없음)
-```bash
-python3 scripts/generate_audio.py   # 오디오 + 싱크 데이터 생성
-npm install                          # 패키지 설치
-npm start                            # Studio 미리보기
-```
-
-### 3. 최종 렌더
-```bash
+npm start
 npm run render
-# 출력: out/video.mp4
+python3 scripts/upload_youtube.py
 ```
 
 ## 중요 규칙
-- `.env`를 절대 커밋하지 말 것 (API 키 포함)
-- `public/audio.mp3`와 `src/data/sync_data.json`이 존재하면 TTS API를 재호출하지 않음 (캐싱)
-- 강제 재생성 시 `--force` 플래그 사용
+- `.env`, `secrets/`, `output/`는 절대 커밋하지 말 것
 - `sync_data.json`의 타임스탬프 단위는 **밀리초(ms)**
-- Remotion 컴포지션 ID: `MainVideo`
-- 영상 스펙: 1920x1080, 30fps
-
-## 현재 상태 (Phase 완료 기록)
-- [x] Phase 1: 아키텍처 설계 (`docs/architecture.md`)
-- [x] Phase 2: TTS + 싱크 데이터 생성 스크립트 (`scripts/generate_audio.py`)
-- [x] Phase 3: Remotion 컴포넌트 구현 (`src/components/`)
-- [x] Phase 4: SEO 메타데이터 (`youtube_metadata.json`)
-- [x] Phase 5: 컨텍스트 문서화 (이 파일)
-
-## 다음 단계
-- `public/audio.mp3` 존재 확인 후 `npm start`로 Remotion Studio 미리보기
-- 디자인 조정 원할 시: `src/components/Visuals.tsx` (배경), `src/components/Subtitle.tsx` (자막 스타일)
-- 최종 렌더: `npm run render`
+- Remotion 렌더는 `public/audio.mp3` + `src/data/sync_data.json`을 공유 사용
+- 렌더 후 `out/video.mp4` → `output/{channel}/video.mp4`로 자동 복사됨
+- Remotion 컴포지션 ID: `MainVideo` / 영상 스펙: 1920x1080, 30fps

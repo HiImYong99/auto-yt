@@ -2,12 +2,16 @@
 .env
 .env.*
 
-# Google OAuth
+# Google OAuth (레거시 루트 경로)
 client_secret.json
 token.json
 
+# 채널별 OAuth 시크릿
+secrets/
+
 # 생성 산출물
 out/
+output/
 public/audio.mp3
 src/data/sync_data.json
 
