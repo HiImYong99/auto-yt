@@ -102,7 +102,7 @@ export const Visuals: React.FC<{ progress: number }> = ({ progress }) => {
         }}
       />
 
-      {/* 수평선 장식 */}
+      {/* 수평선 */}
       {[0.2, 0.4, 0.6, 0.8].map((pos, i) => {
         const lineOpacity = interpolate(
           Math.sin(((frame + i * 40) / fps) * 0.6),
@@ -124,6 +124,49 @@ export const Visuals: React.FC<{ progress: number }> = ({ progress }) => {
           />
         );
       })}
+
+      {/* 수직선 그리드 (데이터 차트 느낌) */}
+      {[0.15, 0.3, 0.45, 0.6, 0.75, 0.9].map((pos, i) => {
+        const lineOpacity = interpolate(
+          Math.sin(((frame + i * 25) / fps) * 0.4),
+          [-1, 1],
+          [0.015, 0.04]
+        );
+        return (
+          <div
+            key={`v${i}`}
+            style={{
+              position: "absolute",
+              top: 0,
+              bottom: 0,
+              left: `${pos * 100}%`,
+              width: 1,
+              background: `linear-gradient(180deg, transparent, hsl(${hue2}, 60%, 60%), transparent)`,
+              opacity: lineOpacity,
+            }}
+          />
+        );
+      })}
+
+      {/* 코너 장식 (데이터 UI 느낌) */}
+      {[
+        { top: 30, left: 30 },
+        { top: 30, right: 30 },
+        { bottom: 30, left: 30 },
+        { bottom: 30, right: 30 },
+      ].map((style, i) => (
+        <div key={`corner${i}`} style={{
+          position: "absolute", ...style,
+          width: 40, height: 40, opacity: 0.18,
+        }}>
+          <svg width={40} height={40} viewBox="0 0 40 40" fill="none">
+            <path
+              d={i === 0 ? "M0 20 L0 0 L20 0" : i === 1 ? "M40 20 L40 0 L20 0" : i === 2 ? "M0 20 L0 40 L20 40" : "M40 20 L40 40 L20 40"}
+              stroke={`hsl(${hue1}, 70%, 65%)`} strokeWidth={1.5}
+            />
+          </svg>
+        </div>
+      ))}
     </div>
   );
 };
