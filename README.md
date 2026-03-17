@@ -1,128 +1,118 @@
 # auto-yt
 
-대본 파일 하나로 유튜브 영상을 자동 생성하는 1인 크리에이터 파이프라인.
+`auto-yt`는 **대본 파일 하나로 유튜브 영상을 자동 생성하는 1인 크리에이터용 콘텐츠 파이프라인**입니다.
 
-## 파이프라인 흐름
+핵심 목적은 반복적인 영상 제작 과정을 줄여서,
+**스크립트 → 음성 → 싱크 → 영상 → 썸네일 → 메타데이터** 흐름을 빠르게 돌리는 것입니다.
 
-```
+## What it solves
+
+- 영상 하나 만들 때 반복 작업이 너무 많다
+- 대본은 있는데 영상화가 느리다
+- 1인 크리에이터가 제작 시간을 줄이기 어렵다
+
+## Pipeline
+
+```text
 vibe.txt (대본)
-  → ElevenLabs TTS + 타임스탬프
-  → sync_data.json
+  → ElevenLabs TTS + 타임스탬프 생성
+  → sync_data.json 생성
   → Remotion 영상 렌더
   → out/video.mp4
-
-  + out/thumbnail.png
-  + youtube_metadata.json
+  → out/thumbnail.png
+  → youtube_metadata.json
 ```
 
-## 빠른 시작
+## Core Features
 
-### 1. 환경 설정
+- 🎙️ 대본 기반 TTS 생성
+- ⏱️ 오디오 싱크 데이터 자동 생성
+- 🎬 Remotion 기반 영상 렌더링
+- 🖼️ 썸네일 생성
+- 📝 유튜브 메타데이터 관리
+
+## Tech Stack
+
+- TypeScript
+- Remotion
+- Python
+- ElevenLabs API
+
+## Status
+
+**MVP / Active**
+
+현재는 범용 유튜브 자동화 툴이라기보다,
+**1인 크리에이터용 자동 제작 파이프라인 프로토타입**에 가깝습니다.
+
+## Quick Start
+
+### 1. Install
+
 ```bash
 npm install
 pip3 install elevenlabs python-dotenv requests
 ```
 
-`.env` 파일에 API 키 입력:
-```
+### 2. Environment
+
+`.env`:
+
+```env
 ELEVENLABS_API_KEY=your_key_here
 ELEVENLABS_VOICE_ID=your_voice_id_here
 ```
 
-### 2. 대본 작성
-`vibe.txt`에 대본 작성 (한국어, 줄바꿈으로 문장 구분)
+### 3. Write Script
 
-### 3. 오디오 + 싱크 데이터 생성
+`vibe.txt`에 대본 작성
+
+### 4. Generate Audio + Sync
+
 ```bash
 python3 scripts/generate_audio.py
 ```
-- 출력: `public/audio.mp3`, `src/data/sync_data.json`
-- 이미 생성된 경우 캐시 사용 (강제 재생성: `--force`)
 
-### 4. 미리보기
+출력:
+- `public/audio.mp3`
+- `src/data/sync_data.json`
+
+### 5. Preview
+
 ```bash
 npm start
-# http://localhost:3000 → MainVideo 선택
 ```
 
-### 5. 최종 렌더
+### 6. Render Final Video
+
 ```bash
 npm run render
-# 출력: out/video.mp4
 ```
 
-### 6. 썸네일 생성
+### 7. Generate Thumbnail
+
 ```bash
 npx remotion still src/index.ts Thumbnail out/thumbnail.png --frame=0
 ```
 
----
+## Output
 
-## 산출물
+- `out/video.mp4`
+- `out/thumbnail.png`
+- `youtube_metadata.json`
 
-| 파일 | 설명 |
-|------|------|
-| `out/video.mp4` | 최종 영상 |
-| `out/thumbnail.png` | 유튜브 썸네일 (1280×720) |
-| `youtube_metadata.json` | 제목 · 설명 · 태그 |
+## Best Fit
 
----
+이 프로젝트는 특히 아래에 맞습니다.
 
-## 영상 스펙
+- 쇼츠/정보형 영상 반복 제작
+- 대본 중심 콘텐츠 제작
+- 1인 운영 크리에이터 자동화
+- AI 음성 기반 콘텐츠 실험
 
-- 해상도: 1920×1080
-- 프레임레이트: 30fps
-- 자막: 5단어씩 한 줄, 단어 그룹 페이드 인/아웃
+## Next Steps
 
-## 시각 요소 타입
-
-| 타입 | 설명 | 사용 시점 |
-|------|------|---------|
-| Icon | 이모지 + 레이블 | 개념 시각화 |
-| Keyword | 큰 텍스트 팝인 | 핵심 메시지 강조 |
-| Counter | 숫자 카운터 | 수치 임팩트 |
-| InfoTip | 제목 + 불릿 카드 | 정보 전달 |
-| TechBadge | 기술 이름 pill | 스택/도구 소개 |
-
----
-
-## 프로젝트 구조
-
-```
-auto-yt/
-├── vibe.txt                  # 대본
-├── scripts/
-│   └── generate_audio.py     # TTS + 타임스탬프 생성
-├── src/
-│   ├── components/
-│   │   ├── Root.tsx           # Remotion 루트
-│   │   ├── MainVideo.tsx      # 메인 컴포지션 + 씬 플랜
-│   │   ├── Subtitle.tsx       # 자막 렌더러
-│   │   ├── Visuals.tsx        # 배경 그라데이션 + 파티클
-│   │   └── Thumbnail.tsx      # 썸네일 컴포지션
-│   ├── data/
-│   │   └── sync_data.json     # 타임스탬프 데이터
-│   └── types.ts
-├── public/
-│   └── audio.mp3              # TTS 오디오
-├── out/
-│   ├── video.mp4
-│   └── thumbnail.png
-├── docs/
-│   └── architecture.md
-├── youtube_metadata.json
-├── .env                       # API 키 (커밋 금지)
-├── CLAUDE.md                  # AI 에이전트 컨텍스트
-└── README.md
-```
-
----
-
-## 새 영상 만들기
-
-1. `vibe.txt` 교체
-2. `python3 scripts/generate_audio.py --force`
-3. `MainVideo.tsx`의 `SCENE_PLAN` 업데이트 (대본 내용에 맞게)
-4. `npm run render`
-5. `npx remotion still src/index.ts Thumbnail out/thumbnail.png --frame=0`
-6. `youtube_metadata.json` 업데이트
+- 특정 니치용 템플릿화
+- 메타데이터 자동 생성 품질 개선
+- 업로드 전 검수 플로우 추가
+- 반자동 → 준자동 운영 흐름 확장
