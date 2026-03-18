@@ -176,6 +176,8 @@ def generate_thumbnail(
             line2 = line2 or " ".join(tokens[mid:])
             if subtitle is None and len(parts) > 1:
                 subtitle = parts[1]
+            if emoji == "🧠":
+                emoji = meta.get("thumbnail_emoji", "🧠")
         else:
             line1 = line1 or "AI 생존전략"
             line2 = line2 or "6가지 핵심 무기"

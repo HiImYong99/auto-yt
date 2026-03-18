@@ -34,16 +34,11 @@ function buildWordGroups(sentences: SentenceData[]): WordGroup[] {
   return groups;
 }
 
-const WORD_GROUPS_CACHE: { groups: WordGroup[] | null } = { groups: null };
-
 export const Subtitle: React.FC<SubtitleProps> = ({ sentences }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  if (!WORD_GROUPS_CACHE.groups) {
-    WORD_GROUPS_CACHE.groups = buildWordGroups(sentences);
-  }
-  const groups = WORD_GROUPS_CACHE.groups;
+  const groups = React.useMemo(() => buildWordGroups(sentences), [sentences]);
 
   const currentMs = (frame / fps) * 1000;
   const activeIdx = groups.findIndex(

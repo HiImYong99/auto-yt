@@ -18,6 +18,7 @@
 """
 
 import sys
+import json
 import shutil
 import subprocess
 import argparse
@@ -61,7 +62,7 @@ def run_cmd(args: list[str], label: str) -> tuple[bool, str]:
 def phase_tts(channel_id: str, script_path: Path) -> bool:
     print(f"[{channel_id}] TTS 시작: {script_path.name}")
     ok, _ = run_cmd([
-        "python3", str(ROOT / "scripts" / "generate_audio.py"),
+        sys.executable, str(ROOT / "scripts" / "generate_audio.py"),
         "--channel", channel_id,
         "--script", str(script_path),
         "--force",
@@ -81,34 +82,75 @@ def phase_render(channel_id: str, channels: dict) -> bool:
         print(f"[{channel_id}] TTS 파일 없음. TTS 먼저 실행하세요.")
         return False
 
+    # Remotion 공유 파일 갱신
     shutil.copy(src_audio, ROOT / "public" / "audio.mp3")
     shutil.copy(src_sync, ROOT / "src" / "data" / "sync_data.json")
+
+    # webpack 캐시 삭제 (이전 대본 기준으로 렌더되는 문제 방지)
+    cache_dir = ROOT / "node_modules" / ".cache" / "webpack"
+    if cache_dir.exists():
+        shutil.rmtree(cache_dir)
+        print(f"[{channel_id}] webpack 캐시 초기화")
+
+    # output/{channel}/video.mp4 로 직접 렌더 (out/ 경유 없음)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    video_out = out_dir / "video.mp4"
     print(f"[{channel_id}] 렌더링 시작...")
 
-    ok, _ = run_cmd(["npm", "run", "render"], channel_id)
+    ok, _ = run_cmd(
+        ["npx", "remotion", "render", "src/index.ts", "MainVideo", str(video_out)],
+        channel_id,
+    )
     if not ok:
         return False
 
-    rendered = ROOT / "out" / "video.mp4"
-    if not rendered.exists():
+    if not video_out.exists():
         print(f"[{channel_id}] 렌더 결과물 없음")
         return False
 
-    out_dir.mkdir(parents=True, exist_ok=True)
-    shutil.copy(rendered, out_dir / "video.mp4")
-    print(f"[{channel_id}] 렌더 완료 → {out_dir / 'video.mp4'}")
+    print(f"[{channel_id}] 렌더 완료 → {video_out}")
     return True
 
 
 def phase_thumbnail(channel_id: str) -> bool:
     print(f"[{channel_id}] 썸네일 생성 중...")
     ok, _ = run_cmd([
-        "python3", str(ROOT / "scripts" / "generate_thumbnail.py"),
+        sys.executable, str(ROOT / "scripts" / "generate_thumbnail.py"),
         "--channel", channel_id,
     ], channel_id)
     if ok:
         print(f"[{channel_id}] 썸네일 완료")
     return ok
+
+
+def inject_timeline(channel_id: str, channels: dict) -> None:
+    """sync_data.json의 실제 타임스탬프로 metadata.json의 {{TIMELINE}} 치환"""
+    out_dir = ROOT / channels[channel_id]["output_dir"]
+    meta_path = out_dir / "metadata.json"
+    sync_path = out_dir / "sync_data.json"
+
+    if not meta_path.exists() or not sync_path.exists():
+        return
+
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    if "{{TIMELINE}}" not in meta.get("description", ""):
+        return
+    chapters = meta.get("chapters")
+    if not chapters:
+        return
+
+    sync = json.loads(sync_path.read_text(encoding="utf-8"))
+    id_to_ms = {s["id"]: s["start_ms"] for s in sync["sentences"]}
+
+    lines = ["📌 타임라인"]
+    for ch in chapters:
+        ms = id_to_ms.get(ch["sentence_id"], 0)
+        m, s = divmod(ms // 1000, 60)
+        lines.append(f"{m:02d}:{s:02d} {ch['name']}")
+
+    meta["description"] = meta["description"].replace("{{TIMELINE}}", "\n".join(lines))
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    print(f"[{channel_id}] 타임라인 자동 주입 완료")
 
 
 def phase_upload(channel_id: str, channels: dict) -> bool:
@@ -123,7 +165,7 @@ def phase_upload(channel_id: str, channels: dict) -> bool:
             shutil.copy(meta_src, meta_dst)
 
     ok, out = run_cmd([
-        "python3", str(ROOT / "scripts" / "upload_youtube.py"),
+        sys.executable, str(ROOT / "scripts" / "upload_youtube.py"),
         "--channel", channel_id,
     ], channel_id)
     if ok:
@@ -203,6 +245,10 @@ def main():
                 if not f.result():
                     print(f"[{futures[f]}] 썸네일 생성 실패 (업로드는 계속 진행)")
         print()
+
+    # ── Phase 2.7: 타임라인 주입 ──
+    for cid, _ in jobs:
+        inject_timeline(cid, channels)
 
     # ── Phase 3: 업로드 (병렬) ──
     if not args.skip_upload:

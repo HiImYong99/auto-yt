@@ -57,7 +57,8 @@ def parse_metadata(paths: dict) -> tuple[str, str, list[str]]:
     if not meta.exists():
         raise FileNotFoundError(f"메타데이터 없음: {meta}")
     data = json.loads(meta.read_text(encoding="utf-8"))
-    return data.get("title", ""), data.get("description", ""), data.get("tags", [])
+    title = data.get("optimized_title", data.get("title", ""))
+    return title, data.get("description", ""), data.get("tags", [])
 
 
 def get_credentials(paths: dict):

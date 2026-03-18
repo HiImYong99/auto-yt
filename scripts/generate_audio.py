@@ -77,13 +77,13 @@ def build_sync_data(api_response: dict, sentences: list[str]) -> dict:
     word_buf = []
     word_start_idx = None
 
-    for i, (ch, t_start, _) in enumerate(zip(chars, char_starts, char_ends)):
+    for i, (ch, t_start, t_end) in enumerate(zip(chars, char_starts, char_ends)):
         if ch in (" ", "\n"):
             if word_buf:
                 words_data.append({
                     "word": "".join(word_buf),
                     "start_ms": int(char_starts[word_start_idx] * 1000),
-                    "end_ms": int(t_start * 1000),
+                    "end_ms": int(char_ends[i - 1] * 1000),
                 })
                 word_buf = []
                 word_start_idx = None
