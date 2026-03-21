@@ -32,342 +32,202 @@ type SceneVisual =
   | VisualCallout | VisualSplit;
 
 // ─────────────────────────────────────────────────────────────
-// 씬 플랜
+// 씬 플랜 — AI 번아웃 (2026-03-19)
 // ─────────────────────────────────────────────────────────────
 const SCENE_PLAN: Array<{ id: number; visuals: SceneVisual[] }> = [
-  // 0: 평생직장의 신화는 이미 산산조각 났습니다.
-  { id: 0, visuals: [{ type: "callout", text: "평생직장 신화 붕괴", sub: "이미 산산조각 났다", color: "#f87171" }] },
-  // 1: 우리가 그토록 굳게 믿어왔던 '노동의 가치'가 인공지능 앞에서 허무하게 무너지고 있죠.
+  // 0: 지금 우리 조직의 에이스가 갑자기 무너지고 있다면 어떨까요?
+  { id: 0, visuals: [{ type: "callout", text: "조직의 에이스가 무너진다", sub: "갑자기, 그리고 예고 없이", color: "#f87171" }] },
+  // 1: 성과가 100이었던 팀원이 하루아침에 0이 되는 상황입니다.
   { id: 1, visuals: [
-    { type: "keyword", text: "노동의 가치", color: "#f87171" },
-    { type: "keyword", text: "AI 앞에 무너진다", color: "#f97316" },
+    { type: "barchart", title: "팀원 성과 붕괴", bars: [
+      { label: "어제", value: 100, color: "#4ade80" },
+      { label: "오늘", value: 5, color: "#f87171" },
+    ], maxValue: 100 },
   ]},
-  // 2: 불과 몇 년 전만 해도 코딩만 배우면 평생 먹고산다고 떠들지 않았나요?
+  // 2: 이건 단순한 피로가 아니라 아주 위험한 신호탄입니다.
   { id: 2, visuals: [
-    { type: "icon", emoji: "💻", label: "코딩 = 평생 직업?" },
-    { type: "keyword", text: "이미 깨진 신화", color: "#f87171" },
+    { type: "icon", emoji: "⚠️", label: "위험한 신호탄" },
+    { type: "keyword", text: "단순 피로가 아니다", color: "#f97316" },
   ]},
-  // 3: 가장 먼저 AI에게 목이 날아가는 직군이 바로 개발자와 엘리트 화이트칼라.
+  // 3: 특히 AI를 가장 잘 활용하는 리더와 팀원들에게서 나타나고 있죠.
   { id: 3, visuals: [
-    { type: "keyword", text: "가장 먼저 날아간다", color: "#f87171" },
-    { type: "techbadge", label: "AI 대체 1순위", tags: ["개발자", "엘리트직군", "화이트칼라"] },
-    { type: "icon", emoji: "✂️", label: "일자리 잘려나가는 중" },
+    { type: "techbadge", label: "AI 최고 활용자에서 먼저", tags: ["리더", "에이스 팀원", "혁신 선두"] },
   ]},
-  // 4: 단순히 사람과 대화만 나누던 낭만적인 AI 시대는 이미 끝났습니다.
-  { id: 4, visuals: [
-    { type: "keyword", text: "낭만의 AI 시대", color: "#94a3b8" },
-    { type: "keyword", text: "이미 끝났다", color: "#f87171" },
-  ]},
-  // 5: 이제는 스스로 계획을 세우고 알아서 업무를 끝내버리는 '행동대장 AI'가 현장에 투입되고 있습니다.
+  // 4: 오늘 우리는 'AI 번아웃'이라는 낯선 괴물에 대해 이야기하려 합니다.
+  { id: 4, visuals: [{ type: "callout", text: "AI 번아웃", sub: "낯선 괴물의 등장", color: "#f87171" }] },
+  // 5: 분명 도구는 편해졌는데 왜 머리는 더 터질 것 같을까요?
   { id: 5, visuals: [
-    { type: "callout", text: "행동대장 AI 등장", sub: "스스로 계획하고 업무를 끝낸다", color: "#f97316" },
-    { type: "icon", emoji: "🤖", label: "자율 행동 AI 투입" },
+    { type: "split", emoji: "🤔", title: "도구 vs 뇌", items: ["✅ AI 도구는 더 편해졌다", "💥 뇌는 더 터질 것 같다"], color: "#f97316" },
   ]},
-  // 6: 클릭 한 번이면 비행기 표 예매부터 복잡한 법률 검토까지 AI가 혼자 다 해버리는 세상이죠.
+  // 6: 도입한 지 불과 몇 달 만에 조직 곳곳에서 경고음이 들립니다.
   { id: 6, visuals: [
-    { type: "icon", emoji: "⚡", label: "클릭 한 번이면 전부" },
-    { type: "techbadge", label: "AI 혼자 처리", tags: ["비행기 예매", "법률 검토", "업무 완결"] },
-    { type: "keyword", text: "AI가 혼자 다 한다", color: "#7bb4ff" },
+    { type: "icon", emoji: "🚨", label: "조직 곳곳 경고음" },
+    { type: "keyword", text: "불과 몇 달 만에", color: "#f87171" },
   ]},
-  // 7: 중간에서 수수료를 떼어먹던 수많은 비즈니스, 정보의 격차를 이용해 돈을 벌던 직업들은 증발합니다.
-  { id: 7, visuals: [
-    { type: "icon", emoji: "💸", label: "정보 격차 비즈니스" },
-    { type: "keyword", text: "수수료 모델 증발", color: "#f87171" },
-    { type: "icon", emoji: "🌫️", label: "직업이 사라진다" },
-  ]},
-  // 8: 이게 뜻하는 바는 너무나 명확하고 또 끔찍합니다.
-  { id: 8, visuals: [{ type: "callout", text: "너무나 명확하고 끔찍하다", color: "#f87171" }] },
-  // 9: 여러분을 대신해 24시간 일할 똑똑한 노벨상 수상자 백만 명이 컴퓨터 안에 살게 되었다는 겁니다.
-  { id: 9, visuals: [
-    { type: "counter", from: 0, to: 1000000, suffix: "명" },
-    { type: "infotip", title: "컴퓨터 속 노동자", items: ["24시간 쉬지 않는다", "노벨상급 지능", "여러분의 비서"] },
-    { type: "keyword", text: "컴퓨터 속에 살게 됐다", color: "#7bb4ff" },
-  ]},
-  // 10: 경제가 돌아가려면 사람들이 돈을 벌고 소비를 해야 합니다. 그런데 일자리가 증발하면 어떻게 될까요.
-  { id: 10, visuals: [
-    { type: "icon", emoji: "💰", label: "소비 경제의 딜레마" },
-    { type: "keyword", text: "일자리 증발 = ?", color: "#f87171" },
-  ]},
-  // 11: 그래서 우리는 이제 '일해서 돈 버는 것'과 '소득을 얻는 것'을 철저히 분리해서 생각해야 합니다.
+  // 7: 이 문제를 방치하면 조직의 핵심 인재부터 사라지게 될 겁니다.
+  { id: 7, visuals: [{ type: "keyword", text: "핵심 인재 이탈", color: "#f87171" }] },
+  // 8: 현장에서 목격한 생생한 사례와 솔루션을 지금부터 공개합니다.
+  { id: 8, visuals: [{ type: "icon", emoji: "🔍", label: "생생한 현장 사례 공개" }] },
+  // 9: 가장 먼저 짚어볼 문제는 바로 '멀티태스킹의 함정'입니다.
+  { id: 9, visuals: [{ type: "callout", text: "멀티태스킹의 함정", sub: "첫 번째 핵심 문제", color: "#f97316" }] },
+  // 10: AI 시대에 다중 업무 능력은 필수 덕목처럼 여겨지죠.
+  { id: 10, visuals: [{ type: "keyword", text: "멀티태스킹 = 필수?", color: "#94a3b8" }] },
+  // 11: 하지만 현실은 여러 개의 AI 창을 띄워놓고 뇌를 혹사하는 중입니다.
   { id: 11, visuals: [
-    { type: "keyword", text: "노동 ≠ 소득", color: "#facc15" },
-    { type: "split", emoji: "⚖️", title: "완전 분리", items: ["💪 일해서 버는 것", "💰 소득을 얻는 것"], color: "#facc15" },
-    { type: "keyword", text: "철저히 분리하라", color: "#4ade80" },
+    { type: "icon", emoji: "🖥️", label: "AI 창 여러 개 동시 가동" },
+    { type: "keyword", text: "뇌를 혹사하는 현실", color: "#f87171" },
   ]},
-  // 12: 과거의 성실한 월급쟁이 마인드로는 절대 다가올 거대한 쓰나미를 버틸 수 없어요.
+  // 12: 마치 24시간 쉬지 않는 초능력 외계인과 함께 일하는 기분일 겁니다.
   { id: 12, visuals: [
-    { type: "icon", emoji: "🌊", label: "다가오는 거대한 쓰나미" },
-    { type: "keyword", text: "월급쟁이 마인드 OUT", color: "#f87171" },
+    { type: "icon", emoji: "👾", label: "쉬지 않는 초능력 외계인" },
+    { type: "keyword", text: "24시간 옆에 있다", color: "#a78bfa" },
   ]},
-  // 13: 국가에서 푼돈 쥐여주는 단순한 기본소득만 바라보고 있다가는 바닥으로 추락할 수밖에 없습니다.
+  // 13: 욕심이 나니까 계속 일을 시키고, 그 결과물을 검토하느라 뇌가 타버리죠.
   { id: 13, visuals: [
-    { type: "icon", emoji: "📉", label: "기본소득만 바라보면" },
-    { type: "keyword", text: "바닥으로 추락", color: "#f87171" },
+    { type: "icon", emoji: "🔥", label: "결과물 검토하다 뇌가 타버린다" },
+    { type: "keyword", text: "욕심이 뇌를 태운다", color: "#f97316" },
   ]},
-  // 14: 잠깐 채널 고정하시고, 구독과 좋아요 한 번씩 부탁드립니다.
-  { id: 14, visuals: [
-    { type: "icon", emoji: "👍", label: "구독 & 좋아요!" },
-    { type: "icon", emoji: "🔔", label: "채널 고정하고 계속 보기" },
-  ]},
-  // 15: 이제 내 땀방울로 버는 노동 소득의 비중은 갈수록 쪼그라들 수밖에 없습니다.
-  { id: 15, visuals: [
-    { type: "linechart", title: "노동 소득 비중", points: [
-      { label: "2020", value: 90 }, { label: "2024", value: 70 },
-      { label: "2026", value: 50 }, { label: "2030", value: 20 },
-    ], color: "#f87171", unit: "%" },
-    { type: "keyword", text: "노동 소득 쪼그라든다", color: "#f87171" },
-  ]},
-  // 16: 대신 자본이 알아서 자본을 낳는 '투자 소득'이 생존을 위한 유일한 동아줄이 되겠죠.
+  // 14: 하버드 비즈니스 리뷰는 이를 'Brain Fry'라고 부릅니다.
+  { id: 14, visuals: [{ type: "callout", text: "Brain Fry", sub: "하버드 비즈니스 리뷰 공식 명칭", color: "#f97316" }] },
+  // 15: 말 그대로 뇌가 튀겨지는 듯한 극심한 정신적 과부하 상태입니다.
+  { id: 15, visuals: [{ type: "keyword", text: "극심한 정신적 과부하", color: "#f87171" }] },
+  // 16: 동시에 4가지 이상의 일을 처리할 때 인간의 생산성은 바닥을 칩니다.
   { id: 16, visuals: [
-    { type: "callout", text: "투자 소득", sub: "생존을 위한 유일한 동아줄", color: "#4ade80" },
-    { type: "icon", emoji: "💰", label: "자본이 자본을 낳는다" },
+    { type: "barchart", title: "동시 작업 수 vs 생산성", bars: [
+      { label: "1가지", value: 100, color: "#4ade80" },
+      { label: "2가지", value: 75, color: "#facc15" },
+      { label: "4가지+", value: 20, color: "#f87171" },
+    ], maxValue: 100 },
   ]},
-  // 17: 그럼 도대체 어디에 내 피 같은 돈을 묻어야 다가올 미래에 살아남을 수 있을까요?
+  // 17: 그런데 우리는 매분 매초를 이 한계치에서 버티고 있습니다.
   { id: 17, visuals: [
-    { type: "icon", emoji: "🎯", label: "어디에 투자해야 하나?" },
-    { type: "keyword", text: "살아남는 투자처는?", color: "#facc15" },
+    { type: "keyword", text: "매분 매초 한계치", color: "#f87171" },
+    { type: "icon", emoji: "⏱️", label: "한계치에서 버티는 중" },
   ]},
-  // 18: 막연하게 AI 관련 주식 아무거나 사면 부자가 될 거라는 순진한 환상은 당장 버리셔야 합니다.
-  { id: 18, visuals: [
-    { type: "keyword", text: "AI 주식 아무거나?", color: "#f87171" },
-    { type: "icon", emoji: "🚫", label: "순진한 환상을 버려라" },
-  ]},
-  // 19: 진짜 돈의 거대한 흐름은 '학습'을 넘어 '추론'의 영역으로 급격히 이동하고 있거든요.
-  { id: 19, visuals: [
-    { type: "keyword", text: "학습 → 추론", color: "#7bb4ff" },
-    { type: "icon", emoji: "🧠", label: "추론의 시대로 이동 중" },
-  ]},
-  // 20: AI가 방대한 지식을 쑤셔 넣는 공부의 시간은 이미 끝을 향해 달려가고 있습니다.
-  { id: 20, visuals: [
-    { type: "keyword", text: "학습 시대 종료", color: "#94a3b8" },
-    { type: "icon", emoji: "📚", label: "공부의 시간은 끝나간다" },
-  ]},
-  // 21: 이제는 배운 것을 써먹는 실전의 시간, 끊임없이 정답을 뱉어내야 하는 추론의 시대가 열렸습니다.
-  { id: 21, visuals: [
-    { type: "callout", text: "추론의 시대 개막", sub: "배운 것을 써먹는 실전의 시간", color: "#7bb4ff" },
-    { type: "keyword", text: "끊임없이 정답을 뱉는다", color: "#a78bfa" },
-    { type: "icon", emoji: "⚡", label: "추론 = 지금의 전쟁터" },
-  ]},
-  // 22: 여기서 상상을 초월하는 엄청난 전력과 거대한 데이터 센터가 쉴 새 없이 갈려 나가고 있어요.
+  // 18: 단순히 '딸깍' 한 번으로 일이 끝나는 게 아니기 때문입니다.
+  { id: 18, visuals: [{ type: "icon", emoji: "🖱️", label: "딸깍 한 번으로 끝나는 일이 아니다" }] },
+  // 19: 결국 사람이 병목 구간이 되어 전체 시스템이 멈춰버리는 거죠.
+  { id: 19, visuals: [{ type: "callout", text: "사람이 병목", sub: "전체 시스템이 멈춰버린다", color: "#f87171" }] },
+  // 20: 이걸 개인의 의지력 문제로 치부해서는 절대 안 됩니다.
+  { id: 20, visuals: [{ type: "keyword", text: "의지력 문제가 아니다", color: "#facc15" }] },
+  // 21: 이제는 업무 설계 방식 자체를 완전히 재구성해야 할 때입니다.
+  { id: 21, visuals: [{ type: "keyword", text: "업무 설계 완전 재구성", color: "#4ade80" }] },
+  // 22: 현장의 요구는 무한하고 대응해야 할 변수는 끝이 없으니까요.
   { id: 22, visuals: [
-    { type: "icon", emoji: "🏭", label: "데이터 센터 24시간 풀가동" },
-    { type: "counter", from: 0, to: 10, suffix: "GW" },
-    { type: "keyword", text: "전력 무한 소비", color: "#facc15" },
+    { type: "infotip", title: "멀티태스킹 함정 요약", items: ["현장 요구는 끝이 없다", "사람이 병목이 된다", "업무 설계 재구성 필요"] },
   ]},
-  // 23: 과거 닷컴 버블 때, 광케이블 깔던 회사들이 돈을 갈퀴로 쓸어 담았던 것처럼.
-  { id: 23, visuals: [
-    { type: "icon", emoji: "🔌", label: "닷컴 버블 - 광케이블" },
-    { type: "keyword", text: "인프라가 돈을 긁어간다", color: "#facc15" },
-  ]},
-  // 24: 지금 미친 듯이 지어지고 있는 데이터 센터와 차세대 반도체가 바로 그 주인공입니다.
-  { id: 24, visuals: [
-    { type: "icon", emoji: "🏗️", label: "미친 듯이 짓는 데이터 센터" },
-    { type: "techbadge", label: "지금의 주인공", tags: ["데이터센터", "차세대 반도체", "AI 인프라"] },
-    { type: "keyword", text: "핵심 인프라에 집중하라", color: "#7bb4ff" },
-  ]},
-  // 25: 기존의 연산 칩이 덤프트럭이라면, 이제는 날렵한 세단형 신형 칩이 필요해졌습니다.
+  // 23: 여러분의 뇌가 타버리기 전에 스스로를 보호할 안전장치가 있나요?
+  { id: 23, visuals: [{ type: "icon", emoji: "🛡️", label: "스스로를 보호할 안전장치" }] },
+  // 24: 리더들이 명심해야 할 두 번째 핵심은 '동기 부여의 상실'입니다.
+  { id: 24, visuals: [{ type: "callout", text: "동기 부여의 상실", sub: "두 번째 핵심 문제", color: "#a78bfa" }] },
+  // 25: 조직 내에서 AI 혁신을 이끄는 에반젤리스트들이 있습니다.
   { id: 25, visuals: [
-    { type: "barchart", title: "칩 성능 진화", bars: [
-      { label: "기존 연산 칩", value: 40, color: "#94a3b8" },
-      { label: "차세대 추론 칩", value: 100, color: "#7bb4ff" },
-    ], maxValue: 100 },
-    { type: "keyword", text: "덤프트럭 → 세단형 칩", color: "#7bb4ff" },
-    { type: "icon", emoji: "🚀", label: "차세대 반도체 혁명" },
+    { type: "techbadge", label: "AI 에반젤리스트", tags: ["AI 리더", "혁신 선구자", "조직의 엔진"] },
   ]},
-  // 26: 방대한 기억을 밀리초 단위로 끄집어내는 새로운 규격의 반도체를 독식할 숨은 승자.
-  { id: 26, visuals: [
-    { type: "keyword", text: "숨은 승자를 찾아라", color: "#facc15" },
-    { type: "techbadge", label: "새로운 규격", tags: ["고대역폭 메모리", "AI 가속기", "추론 반도체"] },
-    { type: "icon", emoji: "🏆", label: "반도체 독식자" },
-  ]},
-  // 27: 그 핵심 인프라를 지배하는 자가 앞으로 10년, 전 세계의 부를 독점하게 될 겁니다.
+  // 26: 누구보다 앞서서 기술을 익히고 조직의 생산성을 높이려 애쓰는 분들이죠.
+  { id: 26, visuals: [{ type: "keyword", text: "조직의 생산성을 높인다", color: "#4ade80" }] },
+  // 27: 그런데 정작 이들이 조직 안에서 고립되고 있다는 사실을 아시나요?
   { id: 27, visuals: [
-    { type: "callout", text: "인프라 지배자", sub: "앞으로 10년, 전 세계 부를 독점한다", color: "#facc15" },
-    { type: "counter", from: 0, to: 10, suffix: "년" },
+    { type: "icon", emoji: "🏝️", label: "조직 안에서 고립" },
+    { type: "keyword", text: "에이스가 고립된다", color: "#f87171" },
   ]},
-  // 28: 하지만 여기서 절대 방심하면 안 됩니다. 시장에 돈이 쏠리면 반드시 거품이 끓어오릅니다.
-  { id: 28, visuals: [
-    { type: "icon", emoji: "⚠️", label: "절대 방심 금지" },
-    { type: "keyword", text: "거품이 끓어오른다", color: "#f97316" },
-  ]},
-  // 29: 모두가 장밋빛 미래를 환호하며 돈을 던질 때, 폭탄 돌리기가 시작됐다는 걸 직시해야 합니다.
+  // 28: "열심히 해도 알아주는 사람이 없다"는 박탈감이 이들을 갉아먹습니다.
+  { id: 28, visuals: [{ type: "callout", text: "알아주는 사람이 없다", sub: "박탈감이 에이스를 갉아먹는다", color: "#f87171" }] },
+  // 29: 기존의 낡은 조직 구조와 AI의 속도가 충돌하며 생기는 균열입니다.
   { id: 29, visuals: [
-    { type: "icon", emoji: "💣", label: "폭탄 돌리기 시작" },
-    { type: "keyword", text: "모두가 환호할 때 조심", color: "#f87171" },
-    { type: "icon", emoji: "👁️", label: "냉정하게 직시하라" },
+    { type: "split", emoji: "⚡", title: "속도 충돌", items: ["🐌 낡은 조직 구조", "🚀 AI의 속도"], color: "#f97316" },
   ]},
-  // 30: 결국 거품이 터지고 난 뒤, 극소수의 기업들이 시장을 통째로 집어삼킵니다.
+  // 30: 사람 중심의 느린 프로세스 안에서 100배 빠른 인재는 괴짜 취급을 받기 쉽죠.
   { id: 30, visuals: [
-    { type: "donut", value: 5, label: "살아남는 기업", sublabel: "시장 전체를 집어삼킨다", color: "#4ade80" },
-    { type: "keyword", text: "극소수만 살아남는다", color: "#4ade80" },
+    { type: "counter", from: 1, to: 100, suffix: "배 빠른 인재" },
+    { type: "keyword", text: "괴짜 취급", color: "#f87171" },
   ]},
-  // 31: 우리는 거품이 터지기 직전에 눈치껏 치고 빠지거나, 진짜배기에 투자해야 합니다.
-  { id: 31, visuals: [
-    { type: "split", emoji: "🎯", title: "생존 전략 2가지", items: ["💨 거품 직전 치고 빠지기", "💎 잿더미 속 진짜배기 투자"], color: "#4ade80" },
-    { type: "keyword", text: "눈치껏 행동하라", color: "#4ade80" },
-    { type: "icon", emoji: "♟️", label: "판을 읽는 자가 이긴다" },
-  ]},
-  // 32: 그렇다고 AI라는 화려한 신기술 자체에만 매몰될 필요는 전혀 없어요.
+  // 31: AX는 단순한 기술 도입이 아니라 조직 문화의 전면 개조입니다.
+  { id: 31, visuals: [{ type: "callout", text: "AX = 조직 문화 전면 개조", sub: "단순 기술 도입이 아니다", color: "#7bb4ff" }] },
+  // 32: 과거의 협업 방식에 AI라는 엔진을 억지로 끼워 넣으면 엔진은 터집니다.
   { id: 32, visuals: [
-    { type: "keyword", text: "AI 신기술만?", color: "#94a3b8" },
-    { type: "icon", emoji: "🙅", label: "그것만이 전부가 아니다" },
+    { type: "icon", emoji: "💥", label: "억지로 끼우면 엔진이 터진다" },
+    { type: "keyword", text: "억지로 끼우면 터진다", color: "#f87171" },
   ]},
-  // 33: 오히려 낡고 고루한 전통 기업들이 AI라는 무기를 장착했을 때 엄청난 파괴력이 터져 나옵니다.
+  // 33: 리더가 직접 AI 빌더가 되어 현장의 속도를 체감해야 하는 이유입니다.
   { id: 33, visuals: [
-    { type: "keyword", text: "전통 기업 + AI", color: "#facc15" },
-    { type: "icon", emoji: "💥", label: "엄청난 파괴력 폭발" },
+    { type: "keyword", text: "리더가 직접 AI 빌더", color: "#4ade80" },
+    { type: "icon", emoji: "🛠️", label: "현장에서 직접 만든다" },
   ]},
-  // 34: 투박한 마트가 AI를 도입해 재고 관리 비용을 미친 듯이 줄여버리는 걸 보세요.
+  // 34: 실무를 모르는 리더가 내리는 지시가 팀원의 동기를 꺾고 있진 않나요?
   { id: 34, visuals: [
-    { type: "icon", emoji: "🏪", label: "마트 + AI = 비용 절감" },
-    { type: "barchart", title: "AI 도입 비용 절감", bars: [
-      { label: "기존", value: 100, color: "#f87171" },
-      { label: "AI 도입 후", value: 30, color: "#4ade80" },
-    ], maxValue: 100 },
+    { type: "icon", emoji: "🎯", label: "실무를 모르는 리더" },
+    { type: "keyword", text: "팀원의 동기를 꺾는 지시", color: "#f87171" },
   ]},
-  // 35: 구경제와 신경제가 충돌하는 폭발적인 교차점에 황금 보물들이 널려 있습니다.
-  { id: 35, visuals: [
-    { type: "keyword", text: "구경제 × 신경제", color: "#facc15" },
-    { type: "icon", emoji: "💎", label: "교차점에 황금 보물이 있다" },
-  ]},
-  // 36: 물론 이 미친 변동성 속에서 내 소중한 자산을 지키는 건 피 말리는 멘탈 싸움입니다.
-  { id: 36, visuals: [
-    { type: "icon", emoji: "🎢", label: "미친 변동성" },
-    { type: "keyword", text: "피 말리는 멘탈 싸움", color: "#f87171" },
-  ]},
-  // 37: 오늘 천만 원 수익이 났다고 해서, 내일도 그 돈을 번다는 보장이 없는 냉혹한 투자 판.
-  { id: 37, visuals: [
-    { type: "counter", from: 10000000, to: 0, suffix: "원" },
-    { type: "keyword", text: "보장 없는 수익", color: "#f87171" },
-  ]},
-  // 38: 매달 꼬박꼬박 꽂히는 월급처럼, 절대로 흔들리지 않는 현금 흐름을 세팅하는 게 생존의 기본.
+  // 35: 혁신적인 팀원일수록 관계의 피로보다 업무의 본질에 집중하고 싶어 합니다.
+  { id: 35, visuals: [{ type: "keyword", text: "업무의 본질에 집중", color: "#7bb4ff" }] },
+  // 36: "사람이랑 힘들게 회의하느니 AI랑 일하는 게 편하다"는 말이 왜 나올까요?
+  { id: 36, visuals: [{ type: "callout", text: "AI랑 일하는 게 편하다", sub: "회의 문화의 위기 신호", color: "#f97316" }] },
+  // 37: 이건 소통 능력의 부재가 아니라 비효율에 대한 소리 없는 비명입니다.
+  { id: 37, visuals: [{ type: "keyword", text: "비효율에 대한 소리 없는 비명", color: "#f87171" }] },
+  // 38: 조직의 보고 체계와 회의 문화가 그대로라면 생산성 향상은 꿈같은 얘기입니다.
   { id: 38, visuals: [
-    { type: "keyword", text: "흔들리지 않는 현금 흐름", color: "#4ade80" },
-    { type: "infotip", title: "현금 흐름 세팅", items: ["매달 꼬박꼬박", "흔들리지 않는 수익", "생존의 기본"] },
-    { type: "icon", emoji: "💳", label: "현금 흐름 구조 만들기" },
+    { type: "split", emoji: "📊", title: "바꾸지 않으면", items: ["📋 낡은 보고 체계 유지", "💤 생산성 향상은 꿈"], color: "#f87171" },
   ]},
-  // 39: 대박을 노리고 몰빵하는 대신, 다양한 바구니에 영리하게 분산해서 수익 구조를 만들어야.
+  // 39: 오히려 밤새 공부하며 자신을 갈아 넣던 인재들이 먼저 퇴사표를 던질 겁니다.
   { id: 39, visuals: [
-    { type: "icon", emoji: "🧺", label: "다양한 바구니에 분산" },
-    { type: "keyword", text: "몰빵 NO 분산 YES", color: "#4ade80" },
-    { type: "infotip", title: "분산 투자", items: ["여러 바구니에 나눠 담기", "영리한 포트폴리오", "끄떡없는 수익 구조"] },
+    { type: "icon", emoji: "🚪", label: "에이스가 먼저 퇴사" },
+    { type: "keyword", text: "에이스가 먼저 나간다", color: "#f87171" },
   ]},
-  // 40: 국가 간 패권 다툼, 금리의 오르내림 같은 거대한 파도는 계속 우리 숨통을 조여옵니다.
-  { id: 40, visuals: [
-    { type: "icon", emoji: "🌏", label: "패권 다툼 & 금리 파도" },
-    { type: "keyword", text: "거대한 파도가 조여온다", color: "#f87171" },
-  ]},
-  // 41: 이럴 때일수록 전 세계 다양한 자산에 씨앗을 흩뿌려두는 유연함만이 유일한 해법.
-  { id: 41, visuals: [
-    { type: "keyword", text: "전 세계에 씨앗을 뿌려라", color: "#4ade80" },
-    { type: "techbadge", label: "글로벌 분산", tags: ["미국", "한국", "ETF", "실물자산"] },
-    { type: "icon", emoji: "🌱", label: "유연함이 유일한 해법" },
-  ]},
-  // 42: 영상 보시면서 공감되는 부분이 있다면 댓글로 여러분의 생각도 남겨주세요.
+  // 40: 컴퓨터도 없던 시절의 규칙으로 슈퍼컴퓨터를 돌리라고 강요하지 마세요.
+  { id: 40, visuals: [{ type: "callout", text: "과거 규칙으로 AI를 강요?", sub: "슈퍼컴퓨터에 낡은 규칙 적용 불가", color: "#f97316" }] },
+  // 41: 리더가 먼저 도구를 잡고 비전을 제시해야 조직 전체가 움직입니다.
+  { id: 41, visuals: [{ type: "keyword", text: "리더가 먼저 도구를 잡아라", color: "#4ade80" }] },
+  // 42: 실리콘밸리의 거물들이 다시 실무로 복귀하는 흐름을 주목해야 합니다.
   { id: 42, visuals: [
-    { type: "icon", emoji: "💬", label: "댓글로 생각 남겨주세요" },
-    { type: "icon", emoji: "🙏", label: "계속해서 달려볼게요" },
+    { type: "techbadge", label: "빅테크 실무 복귀 흐름", tags: ["CEO 직접 빌딩", "실무 리더십", "실리콘밸리 트렌드"] },
   ]},
-  // 43: 자, 그럼 가장 현실적인 고민으로. 우리 아이들은 어떻게 키워야 할까요.
+  // 43: 현장을 모르는 리더는 AI 네이티브 팀을 절대 만들 수 없습니다.
   { id: 43, visuals: [
-    { type: "icon", emoji: "👶", label: "우리 아이들을 어떻게?" },
-    { type: "keyword", text: "AI 시대 육아법", color: "#a78bfa" },
+    { type: "keyword", text: "AI 네이티브 팀", color: "#7bb4ff" },
+    { type: "icon", emoji: "❌", label: "현장 모르는 리더는 불가" },
   ]},
-  // 44: 국영수 학원, 예체능 학원에 목매는 건 기계와 스펙 경쟁하는 겁니다.
-  { id: 44, visuals: [
-    { type: "icon", emoji: "🏫", label: "스펙 경쟁은 이제 무의미" },
-    { type: "keyword", text: "기계와 스펙 경쟁?", color: "#f87171" },
-    { type: "icon", emoji: "❌", label: "AI 앞에 학벌 무용지물" },
-  ]},
-  // 45: 기계가 절대 가질 수 없는, 인간만의 날카로운 '안목'을 벼려줘야 해요.
-  { id: 45, visuals: [
-    { type: "keyword", text: "인간만의 안목", color: "#facc15" },
-    { type: "icon", emoji: "👁️", label: "기계가 절대 가질 수 없는 것" },
-  ]},
-  // 46: AI가 수만 개의 시안을 쏟아낼 때, 진짜 돈이 될 단 하나의 정답을 핀셋처럼 골라낼 능력.
+  // 44: 단순히 공모전이나 열고 영웅 한두 명을 뽑는 방식은 이제 끝났습니다.
+  { id: 44, visuals: [{ type: "keyword", text: "공모전 방식 종료", color: "#f87171" }] },
+  // 45: 구조 자체를 AI 최적화 상태로 재설계하는 결단이 필요합니다.
+  { id: 45, visuals: [{ type: "callout", text: "구조를 AI 최적화로", sub: "전면 재설계 결단이 필요", color: "#4ade80" }] },
+  // 46: 지금 고생하는 팀원들의 신호를 좌시하지 마십시오.
   { id: 46, visuals: [
-    { type: "counter", from: 0, to: 10000, suffix: "개" },
-    { type: "keyword", text: "단 하나의 정답", color: "#facc15" },
-    { type: "icon", emoji: "🔬", label: "핀셋처럼 골라낸다" },
+    { type: "icon", emoji: "📡", label: "팀원의 신호를 포착하라" },
+    { type: "keyword", text: "신호를 좌시 말라", color: "#facc15" },
   ]},
-  // 47: 만약 아이가 특정 장난감이나 게임에 미쳐 있다면, 그걸 억누르지 마세요.
+  // 47: 그들의 열정이 번아웃으로 타버리기 전에 탑다운의 변화를 보여줘야 합니다.
   { id: 47, visuals: [
-    { type: "icon", emoji: "🎮", label: "게임에 미쳐있다면?" },
-    { type: "keyword", text: "억누르지 마라", color: "#4ade80" },
+    { type: "icon", emoji: "🔥", label: "열정이 번아웃으로 타버린다" },
+    { type: "keyword", text: "탑다운의 변화", color: "#f97316" },
   ]},
-  // 48: 그 좁고 깊은 오타쿠 같은 집요한 몰입이 AI 시대에는 가장 강력한 무기가 됩니다.
+  // 48: 우리가 AI를 부리는 기계가 아니라, AI가 우리를 돕는 구조를 만드세요.
   { id: 48, visuals: [
-    { type: "callout", text: "오타쿠 몰입", sub: "AI 시대 가장 강력한 무기", color: "#a78bfa" },
-    { type: "keyword", text: "깊이가 곧 경쟁력", color: "#a78bfa" },
+    { type: "split", emoji: "🤝", title: "AI와의 관계", items: ["❌ 우리가 AI를 혹사", "✅ AI가 우리를 돕는 구조"], color: "#4ade80" },
   ]},
-  // 49: 단돈 몇 푼 없이도 방구석에서 전 세계를 상대로 비즈니스를 벌일 수 있는 미친 시대.
+  // 49: 가끔은 모든 연결을 끊고 숨을 고르는 시간도 반드시 필요합니다.
   { id: 49, visuals: [
-    { type: "icon", emoji: "🌍", label: "방구석 → 전 세계 비즈니스" },
-    { type: "keyword", text: "자본 없이 창업 가능", color: "#4ade80" },
-    { type: "icon", emoji: "🚀", label: "미친 기회의 시대" },
+    { type: "icon", emoji: "🌿", label: "디지털 디톡스" },
+    { type: "keyword", text: "연결을 끊는 시간", color: "#4ade80" },
   ]},
-  // 50: 아이디어 하나만 던져주면 코딩, 디자인, 마케팅까지 AI가 알아서 다 찍어내는 마법 같은 세상.
-  { id: 50, visuals: [
-    { type: "techbadge", label: "AI가 다 해준다", tags: ["코딩", "디자인", "마케팅"] },
-    { type: "keyword", text: "아이디어만 있으면", color: "#7bb4ff" },
-    { type: "icon", emoji: "✨", label: "마법 같은 세상" },
-  ]},
-  // 51: 망해도 타격이 없는 가벼운 창업을 무한히 반복하게 만들면서, 회복 탄력성을 키워줘야 합니다.
+  // 50: 복잡한 멀티태스킹에서 벗어나 오직 나 자신에게 집중하는 쉼표 말이죠.
+  { id: 50, visuals: [{ type: "keyword", text: "오직 나에게 집중하는 쉼표", color: "#a78bfa" }] },
+  // 51: 아무도 시키지 않았지만 미래를 위해 달리는 여러분을 진심으로 응원합니다.
   { id: 51, visuals: [
-    { type: "infotip", title: "AI 시대 창업 교육", items: ["가벼운 창업 무한 반복", "실패해도 OK", "회복 탄력성을 키운다"] },
-    { type: "keyword", text: "실패를 두려워하지 마라", color: "#4ade80" },
-    { type: "icon", emoji: "🔄", label: "무한 반복 도전" },
+    { type: "icon", emoji: "🏃", label: "미래를 위해 달리는 중" },
+    { type: "keyword", text: "진심으로 응원합니다", color: "#4ade80" },
   ]},
-  // 52: 이 거대한 문명의 전환기 앞에서 가만히 숨만 쉬고 있는 건, 세상에서 가장 멍청한 선택.
-  { id: 52, visuals: [
-    { type: "callout", text: "가만히 있으면 끝", sub: "가장 멍청한 선택", color: "#f87171" },
-    { type: "keyword", text: "문명 전환기에 행동하라", color: "#facc15" },
-    { type: "icon", emoji: "⏰", label: "지금 당장 움직여라" },
-  ]},
-  // 53: 귀찮더라도 매일 경제 뉴스를 챙겨보고, 세상의 미세한 흐름을 읽어내는 생존 루틴을 만들어야 합니다.
+  // 52: 오늘 대본이 여러분의 조직을 살리는 작은 불씨가 되길 바랍니다.
+  { id: 52, visuals: [{ type: "icon", emoji: "🕯️", label: "조직을 살리는 작은 불씨" }] },
+  // 53: 도움이 되셨다면 구독과 알림 설정으로 다음 인사이트도 놓치지 마세요.
   { id: 53, visuals: [
-    { type: "icon", emoji: "📰", label: "매일 경제 뉴스 챙기기" },
-    { type: "keyword", text: "나만의 생존 루틴", color: "#4ade80" },
-    { type: "infotip", title: "생존 루틴", items: ["매일 경제 뉴스", "미세한 흐름 포착", "습관이 생존이다"] },
+    { type: "icon", emoji: "🔔", label: "구독 & 알림 설정" },
+    { type: "icon", emoji: "👍", label: "좋아요 눌러주세요" },
   ]},
-  // 54: 정보 쓰레기 더미 속에서, 진짜 돈 냄새를 맡는 짐승 같은 감각은 오직 반복에서 나옵니다.
-  { id: 54, visuals: [
-    { type: "icon", emoji: "🐺", label: "짐승 같은 감각" },
-    { type: "keyword", text: "돈 냄새를 맡아라", color: "#facc15" },
-    { type: "callout", text: "반복이 감각을 만든다", color: "#facc15" },
-  ]},
-  // 55: 영상이 끝나면 지금 당장 AI 도구들을 켜서 이것저것 미친 듯이 써봐야 합니다.
-  { id: 55, visuals: [
-    { type: "keyword", text: "당장 AI 도구를 켜라", color: "#7bb4ff" },
-    { type: "icon", emoji: "💻", label: "직접 써봐야 안다" },
-    { type: "techbadge", label: "지금 바로", tags: ["ChatGPT", "Claude", "Gemini", "Cursor"] },
-  ]},
-  // 56: 자전거 타는 법을 글로 배울 수 없듯, AI 역시 직접 부딪히고 깨져봐야 온전히 내 것이 됩니다.
-  { id: 56, visuals: [
-    { type: "icon", emoji: "🚲", label: "자전거 = 직접 타야 배운다" },
-    { type: "keyword", text: "직접 부딪혀야 한다", color: "#7bb4ff" },
-  ]},
-  // 57: 지금 당장 AI를 거칠게 부려먹는 사람과, AI가 일하는 걸 구경만 하는 사람.
-  { id: 57, visuals: [
-    { type: "split", emoji: "⚡", title: "두 종류의 인간", items: ["🔥 AI를 거칠게 부려먹는 사람", "👀 AI를 구경만 하는 사람"], color: "#7bb4ff" },
-    { type: "keyword", text: "당신은 어느 쪽?", color: "#facc15" },
-    { type: "icon", emoji: "🔱", label: "부려먹는 자 vs 구경꾼" },
-  ]},
-  // 58: 불과 10년 뒤, 이 두 사람의 통장 잔고와 인생의 격차는 우주와 먼지 수준으로 아득해질 겁니다.
-  { id: 58, visuals: [
-    { type: "barchart", title: "10년 후 격차", bars: [
-      { label: "AI 활용자", value: 100, color: "#4ade80" },
-      { label: "구경꾼", value: 1, color: "#f87171" },
-    ], maxValue: 100 },
-    { type: "keyword", text: "우주와 먼지의 격차", color: "#facc15" },
-  ]},
-  // 59: 평생 구경꾼으로만 남을 것인가, 아니면 새로운 부의 폭주 기관차에 올라탈 것인가.
-  { id: 59, visuals: [
-    { type: "icon", emoji: "🚂", label: "부의 폭주 기관차" },
-    { type: "keyword", text: "올라탈 것인가 아닌가", color: "#facc15" },
-  ]},
-  // 60: 거대한 부의 이동은 이미 시작됐습니다. 선택은 오직 여러분의 몫입니다.
-  { id: 60, visuals: [{ type: "callout", text: "부의 이동은 시작됐다", sub: "선택은 오직 여러분의 몫", color: "#4ade80" }] },
+  // 54: 더 건강하고 강력한 조직을 만드는 길, 함께 고민하겠습니다.
+  { id: 54, visuals: [{ type: "keyword", text: "더 건강하고 강력한 조직", color: "#4ade80" }] },
+  // 55: 감사합니다.
+  { id: 55, visuals: [{ type: "icon", emoji: "🙏", label: "감사합니다" }] },
 ];
 
 // ─────────────────────────────────────────────────────────────
@@ -421,7 +281,7 @@ function usePopIn(durationInFrames: number) {
   const { fps } = useVideoConfig();
   const scale = spring({ fps, frame, config: { damping: 14, stiffness: 130 } });
   const opacity = interpolate(
-    frame, [0, 6, durationInFrames - 8, durationInFrames], [0, 1, 1, 0],
+    frame, [0, 6, Math.max(7, durationInFrames - 8), durationInFrames], [0, 1, 1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
   return { scale, opacity };
@@ -468,7 +328,7 @@ const SceneKeyword: React.FC<{ v: VisualKeyword; dur: number }> = ({ v, dur }) =
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const scale = spring({ fps, frame, config: { damping: 12, stiffness: 180 } });
-  const opacity = interpolate(frame, [0, 5, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 5, Math.max(6, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
   const color = v.color ?? "#7bb4ff";
@@ -490,7 +350,7 @@ const SceneCounter: React.FC<{ v: VisualCounter; dur: number }> = ({ v, dur }) =
   const progress = interpolate(frame, [0, RAMP], [0, 1], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
-  const opacity = interpolate(frame, [0, 6, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 6, Math.max(7, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
   const eased = 1 - Math.pow(1 - progress, 3);
@@ -556,7 +416,7 @@ const SceneInfoTip: React.FC<{ v: VisualInfoTip; dur: number }> = ({ v, dur }) =
 const SceneTechBadge: React.FC<{ v: VisualTechBadge; dur: number }> = ({ v, dur }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const opacity = interpolate(frame, [0, 8, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 8, Math.max(9, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
 
@@ -600,7 +460,7 @@ const SceneDonut: React.FC<{ v: VisualDonut; dur: number }> = ({ v, dur }) => {
   const progress = interpolate(frame, [0, RAMP], [0, 1], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
-  const opacity = interpolate(frame, [0, 8, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 8, Math.max(9, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
   const eased = 1 - Math.pow(1 - progress, 3);
@@ -662,7 +522,7 @@ const SceneDonut: React.FC<{ v: VisualDonut; dur: number }> = ({ v, dur }) => {
 const SceneBarChart: React.FC<{ v: VisualBarChart; dur: number }> = ({ v, dur }) => {
   const frame = useCurrentFrame();
   const RAMP = Math.min(55, dur - 10);
-  const opacity = interpolate(frame, [0, 8, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 8, Math.max(9, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
   const maxVal = v.maxValue ?? Math.max(...v.bars.map((b) => b.value));
@@ -755,7 +615,7 @@ const SceneLineChart: React.FC<{ v: VisualLineChart; dur: number }> = ({ v, dur 
   const progress = interpolate(frame, [0, RAMP], [0, 1], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
-  const opacity = interpolate(frame, [0, 8, dur - 8, dur], [0, 1, 1, 0], {
+  const opacity = interpolate(frame, [0, 8, Math.max(9, dur - 8), dur], [0, 1, 1, 0], {
     extrapolateLeft: "clamp", extrapolateRight: "clamp",
   });
   const eased = 1 - Math.pow(1 - progress, 3);
@@ -894,7 +754,7 @@ const SceneCallout: React.FC<{ v: VisualCallout; dur: number }> = ({ v, dur }) =
   const { fps } = useVideoConfig();
   const color = v.color ?? "#7bb4ff";
   const scale = spring({ fps, frame, config: { damping: 16, stiffness: 140 } });
-  const opacity = interpolate(frame, [0, 6, dur - 8, dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const opacity = interpolate(frame, [0, 6, Math.max(7, dur - 8), dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const glow = 0.5 + 0.5 * Math.sin((frame / fps) * Math.PI * 2.4);
   const borderAlpha = Math.round(40 + glow * 50).toString(16).padStart(2, "0");
   const shadowBlur = 38 + glow * 32;
@@ -932,7 +792,7 @@ const SceneSplit: React.FC<{ v: VisualSplit; dur: number }> = ({ v, dur }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const color = v.color ?? "#7bb4ff";
-  const opacity = interpolate(frame, [0, 8, dur - 10, dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+  const opacity = interpolate(frame, [0, 8, Math.max(9, dur - 10), dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
   const slideY = spring({ fps, frame, config: { damping: 18, stiffness: 115 } });
   const ty = interpolate(slideY, [0, 1], [70, 0]);
 

@@ -82,7 +82,20 @@ def get_credentials(paths: dict):
     return creds
 
 
-def upload(channel_id: str | None = None) -> str:
+def get_video_id_path(paths: dict) -> Path:
+    return paths["metadata_json"].parent / "video_id.txt"
+
+
+def load_existing_video_id(paths: dict) -> str | None:
+    p = get_video_id_path(paths)
+    return p.read_text(encoding="utf-8").strip() if p.exists() else None
+
+
+def save_video_id(paths: dict, video_id: str) -> None:
+    get_video_id_path(paths).write_text(video_id, encoding="utf-8")
+
+
+def upload(channel_id: str | None = None, force_new: bool = False) -> str:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
 
@@ -97,46 +110,83 @@ def upload(channel_id: str | None = None) -> str:
     creds = get_credentials(paths)
     youtube = build("youtube", "v3", credentials=creds)
 
-    print(f"{label}영상 업로드 중: {paths['video']}")
-    request = youtube.videos().insert(
-        part="snippet,status",
-        body={
-            "snippet": {
-                "title": title,
-                "description": description,
-                "tags": tags,
-                "categoryId": paths["category_id"],
-                "defaultLanguage": "ko",
+    existing_id = None if force_new else load_existing_video_id(paths)
+
+    if existing_id:
+        # 기존 영상 메타데이터 업데이트
+        print(f"{label}기존 영상 메타데이터 업데이트: https://youtu.be/{existing_id}")
+        youtube.videos().update(
+            part="snippet,status",
+            body={
+                "id": existing_id,
+                "snippet": {
+                    "title": title,
+                    "description": description,
+                    "tags": tags,
+                    "categoryId": paths["category_id"],
+                    "defaultLanguage": "ko",
+                },
+                "status": {"privacyStatus": paths["privacy"]},
             },
-            "status": {"privacyStatus": paths["privacy"]},
-        },
-        media_body=MediaFileUpload(str(paths["video"]), chunksize=-1, resumable=True),
-    )
-
-    response = None
-    while response is None:
-        status, response = request.next_chunk()
-        if status:
-            print(f"{label}  {int(status.progress() * 100)}%...", end="\r")
-
-    video_id = response["id"]
-    print(f"\n{label}업로드 완료: https://youtu.be/{video_id}")
-
-    if paths["thumbnail"].exists():
-        youtube.thumbnails().set(
-            videoId=video_id,
-            media_body=MediaFileUpload(str(paths["thumbnail"])),
         ).execute()
-        print(f"{label}썸네일 완료")
+        print(f"{label}메타데이터 업데이트 완료")
 
-    print(f"\n{'='*60}\n{label}영상: https://youtu.be/{video_id} ({paths['privacy']})\n{'='*60}")
-    return video_id
+        if paths["thumbnail"].exists():
+            youtube.thumbnails().set(
+                videoId=existing_id,
+                media_body=MediaFileUpload(str(paths["thumbnail"])),
+            ).execute()
+            print(f"{label}썸네일 완료")
+
+        print(f"\n{'='*60}\n{label}영상: https://youtu.be/{existing_id} ({paths['privacy']})")
+        print(f"{label}⚠️  영상 파일 교체는 YouTube 스튜디오에서 수동으로 진행하세요.")
+        print(f"{'='*60}")
+        return existing_id
+    else:
+        # 신규 업로드
+        print(f"{label}영상 업로드 중: {paths['video']}")
+        request = youtube.videos().insert(
+            part="snippet,status",
+            body={
+                "snippet": {
+                    "title": title,
+                    "description": description,
+                    "tags": tags,
+                    "categoryId": paths["category_id"],
+                    "defaultLanguage": "ko",
+                },
+                "status": {"privacyStatus": paths["privacy"]},
+            },
+            media_body=MediaFileUpload(str(paths["video"]), chunksize=-1, resumable=True),
+        )
+
+        response = None
+        while response is None:
+            status, response = request.next_chunk()
+            if status:
+                print(f"{label}  {int(status.progress() * 100)}%...", end="\r")
+
+        video_id = response["id"]
+        save_video_id(paths, video_id)
+        print(f"\n{label}업로드 완료: https://youtu.be/{video_id}")
+
+        if paths["thumbnail"].exists():
+            youtube.thumbnails().set(
+                videoId=video_id,
+                media_body=MediaFileUpload(str(paths["thumbnail"])),
+            ).execute()
+            print(f"{label}썸네일 완료")
+
+        print(f"\n{'='*60}\n{label}영상: https://youtu.be/{video_id} ({paths['privacy']})\n{'='*60}")
+        return video_id
 
 
 def main():
     parser = argparse.ArgumentParser(description="YouTube 업로드")
     parser.add_argument("--channel", help="채널 ID (channels.json 키)")
-    upload(parser.parse_args().channel)
+    parser.add_argument("--force-new", action="store_true", help="기존 video_id 무시하고 신규 업로드")
+    args = parser.parse_args()
+    upload(args.channel, force_new=args.force_new)
 
 
 if __name__ == "__main__":

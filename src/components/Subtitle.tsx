@@ -18,16 +18,24 @@ interface WordGroup {
 function buildWordGroups(sentences: SentenceData[]): WordGroup[] {
   const groups: WordGroup[] = [];
   for (const sentence of sentences) {
-    const words = sentence.words;
-    if (words.length === 0) continue;
+    // 원본 문장 텍스트를 5단어씩 분할 (whisper 인식 단어 대신)
+    const words = sentence.text.trim().split(/\s+/).filter(Boolean);
+    const numGroups = Math.ceil(words.length / MAX_WORDS);
+    const sentDur = sentence.end_ms - sentence.start_ms;
+
     for (let i = 0; i < words.length; i += MAX_WORDS) {
       const chunk = words.slice(i, i + MAX_WORDS);
-      const isLast = i + MAX_WORDS >= words.length;
+      const groupIdx = Math.floor(i / MAX_WORDS);
+      const isLast = groupIdx === numGroups - 1;
+      // 문장 시간을 그룹 수로 균등 분배
+      const groupStart = sentence.start_ms + Math.round(sentDur * groupIdx / numGroups);
+      const groupEnd = isLast
+        ? sentence.end_ms
+        : sentence.start_ms + Math.round(sentDur * (groupIdx + 1) / numGroups);
       groups.push({
-        text: chunk.map((w) => w.word).join(" "),
-        start_ms: chunk[0].start_ms,
-        // 마지막 청크는 문장 끝까지 유지
-        end_ms: isLast ? sentence.end_ms : chunk[chunk.length - 1].end_ms,
+        text: chunk.join(" "),
+        start_ms: groupStart,
+        end_ms: Math.max(groupEnd, groupStart + 1),
       });
     }
   }
@@ -53,9 +61,11 @@ export const Subtitle: React.FC<SubtitleProps> = ({ sentences }) => {
   const elapsed = frame - groupStartFrame;
   const duration = groupEndFrame - groupStartFrame;
 
+  const fadeIn = Math.min(FADE_FRAMES, duration / 2);
+  const fadeOut = Math.max(duration - fadeIn, fadeIn + 0.01);
   const opacity = interpolate(
     elapsed,
-    [0, FADE_FRAMES, duration - FADE_FRAMES, duration],
+    [0, fadeIn, fadeOut, duration],
     [0, 1, 1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );

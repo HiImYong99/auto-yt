@@ -124,7 +124,8 @@ def phase_thumbnail(channel_id: str) -> bool:
 
 
 def inject_timeline(channel_id: str, channels: dict) -> None:
-    """sync_data.json의 실제 타임스탬프로 metadata.json의 {{TIMELINE}} 치환"""
+    """sync_data.json의 실제 타임스탬프로 metadata.json 타임라인 섹션을 항상 교체"""
+    import re
     out_dir = ROOT / channels[channel_id]["output_dir"]
     meta_path = out_dir / "metadata.json"
     sync_path = out_dir / "sync_data.json"
@@ -133,8 +134,6 @@ def inject_timeline(channel_id: str, channels: dict) -> None:
         return
 
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
-    if "{{TIMELINE}}" not in meta.get("description", ""):
-        return
     chapters = meta.get("chapters")
     if not chapters:
         return
@@ -147,13 +146,23 @@ def inject_timeline(channel_id: str, channels: dict) -> None:
         ms = id_to_ms.get(ch["sentence_id"], 0)
         m, s = divmod(ms // 1000, 60)
         lines.append(f"{m:02d}:{s:02d} {ch['name']}")
+    timeline_block = "\n".join(lines)
 
-    meta["description"] = meta["description"].replace("{{TIMELINE}}", "\n".join(lines))
+    desc = meta.get("description", "")
+    if "{{TIMELINE}}" in desc:
+        desc = desc.replace("{{TIMELINE}}", timeline_block)
+    elif "📌 타임라인" in desc:
+        # 기존 타임라인 섹션 전체를 교체
+        desc = re.sub(r"📌 타임라인\n(?:\d{2}:\d{2}[^\n]*\n?)*", timeline_block, desc)
+    else:
+        desc = desc + "\n\n" + timeline_block
+
+    meta["description"] = desc
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
     print(f"[{channel_id}] 타임라인 자동 주입 완료")
 
 
-def phase_upload(channel_id: str, channels: dict) -> bool:
+def phase_upload(channel_id: str, channels: dict, force_new: bool = False) -> bool:
     print(f"[{channel_id}] 업로드 시작...")
 
     # metadata.json 없으면 루트 youtube_metadata.json 복사
@@ -164,10 +173,10 @@ def phase_upload(channel_id: str, channels: dict) -> bool:
         if meta_src.exists():
             shutil.copy(meta_src, meta_dst)
 
-    ok, out = run_cmd([
-        sys.executable, str(ROOT / "scripts" / "upload_youtube.py"),
-        "--channel", channel_id,
-    ], channel_id)
+    cmd = [sys.executable, str(ROOT / "scripts" / "upload_youtube.py"), "--channel", channel_id]
+    if force_new:
+        cmd.append("--force-new")
+    ok, out = run_cmd(cmd, channel_id)
     if ok:
         for line in out.splitlines():
             if "youtu.be" in line or "완료" in line:
@@ -184,6 +193,7 @@ def main():
     parser.add_argument("--skip-render", action="store_true")
     parser.add_argument("--skip-thumbnail", action="store_true")
     parser.add_argument("--skip-upload", action="store_true")
+    parser.add_argument("--force-new", action="store_true", help="기존 video_id 무시하고 신규 업로드")
     args = parser.parse_args()
 
     config = load_config()
@@ -255,7 +265,7 @@ def main():
         print("=" * 50 + "\nPhase 3: YouTube 업로드 (병렬)\n" + "=" * 50)
         failed = []
         with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-            futures = {ex.submit(phase_upload, cid, channels): cid for cid, _ in jobs}
+            futures = {ex.submit(phase_upload, cid, channels, args.force_new): cid for cid, _ in jobs}
             for f in as_completed(futures):
                 if not f.result():
                     failed.append(futures[f])

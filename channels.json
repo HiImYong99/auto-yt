@@ -9,21 +9,10 @@
   "channels": {
     "vibe": {
       "display_name": "바이브빌더",
-      "voice_id": "7Nah3cbXKVmGX7gQUuwz",
+      "tts_engine": "qwen3",
+      "ref_audio": "ref_voice.wav",
       "token": "secrets/token_vibe.json",
       "output_dir": "output/vibe"
-    },
-    "info": {
-      "display_name": "지식 저장소 24시",
-      "voice_id": "7Nah3cbXKVmGX7gQUuwz",
-      "token": "secrets/token_info.json",
-      "output_dir": "output/info"
-    },
-    "code": {
-      "display_name": "바이브코더",
-      "voice_id": "7Nah3cbXKVmGX7gQUuwz",
-      "token": "secrets/token_code.json",
-      "output_dir": "output/code"
     }
   }
 }
