@@ -268,9 +268,9 @@ def main():
     if not args.skip_upload:
         print("=" * 50 + "\nPhase 3: YouTube 업로드 (병렬)\n" + "=" * 50)
         failed = []
+        force_new = not args.update_existing
         with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-            force_new = not args.update_existing
-        futures = {ex.submit(phase_upload, cid, channels, force_new): cid for cid, _ in jobs}
+            futures = {ex.submit(phase_upload, cid, channels, force_new): cid for cid, _ in jobs}
             for f in as_completed(futures):
                 if not f.result():
                     failed.append(futures[f])
