@@ -197,7 +197,7 @@ def main():
     parser.add_argument("--skip-render", action="store_true")
     parser.add_argument("--skip-thumbnail", action="store_true")
     parser.add_argument("--skip-upload", action="store_true")
-    parser.add_argument("--force-new", action="store_true", help="기존 video_id 무시하고 신규 업로드")
+    parser.add_argument("--update-existing", action="store_true", help="기존 video_id 메타데이터만 업데이트 (기본값: 항상 신규 업로드)")
     args = parser.parse_args()
 
     config = load_config()
@@ -269,7 +269,8 @@ def main():
         print("=" * 50 + "\nPhase 3: YouTube 업로드 (병렬)\n" + "=" * 50)
         failed = []
         with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
-            futures = {ex.submit(phase_upload, cid, channels, args.force_new): cid for cid, _ in jobs}
+            force_new = not args.update_existing
+        futures = {ex.submit(phase_upload, cid, channels, force_new): cid for cid, _ in jobs}
             for f in as_completed(futures):
                 if not f.result():
                     failed.append(futures[f])
