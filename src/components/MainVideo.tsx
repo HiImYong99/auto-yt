@@ -958,7 +958,7 @@ export const MainVideo: React.FC = () => {
   return (
     <div style={{ width: "100%", height: "100%", position: "relative", overflow: "hidden" }}>
       <Visuals progress={progress} />
-      <Audio src={staticFile("audio.mp3")} volume={1.6} />
+      <Audio src={staticFile("audio.mp3")} volume={12.6} />
 
       <Sequence from={0} durationInFrames={fps * 2}>
         <IntroOverlay />
