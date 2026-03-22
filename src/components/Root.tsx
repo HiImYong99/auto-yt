@@ -1,6 +1,7 @@
 import React from "react";
 import { Composition } from "remotion";
 import { MainVideo } from "./MainVideo";
+import { SampleVideo } from "./SampleVideo";
 import syncData from "../data/sync_data.json";
 
 const FPS = 30;
@@ -11,13 +12,23 @@ const DURATION_FRAMES =
 
 export const Root: React.FC = () => {
   return (
-    <Composition
-      id="MainVideo"
-      component={MainVideo}
-      durationInFrames={DURATION_FRAMES}
-      fps={FPS}
-      width={1920}
-      height={1080}
-    />
+    <>
+      <Composition
+        id="MainVideo"
+        component={MainVideo}
+        durationInFrames={DURATION_FRAMES}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+      <Composition
+        id="SampleVideo"
+        component={SampleVideo}
+        durationInFrames={600}
+        fps={FPS}
+        width={1920}
+        height={1080}
+      />
+    </>
   );
 };

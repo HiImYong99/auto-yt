@@ -86,11 +86,11 @@ def phase_render(channel_id: str, channels: dict) -> bool:
     shutil.copy(src_audio, ROOT / "public" / "audio.mp3")
     shutil.copy(src_sync, ROOT / "src" / "data" / "sync_data.json")
 
-    # webpack 캐시 삭제 (이전 대본 기준으로 렌더되는 문제 방지)
-    cache_dir = ROOT / "node_modules" / ".cache" / "webpack"
+    # 빌드 캐시 전체 삭제 (webpack/esbuild 등 — 이전 대본으로 렌더되는 문제 방지)
+    cache_dir = ROOT / "node_modules" / ".cache"
     if cache_dir.exists():
         shutil.rmtree(cache_dir)
-        print(f"[{channel_id}] webpack 캐시 초기화")
+        print(f"[{channel_id}] 빌드 캐시 전체 초기화 (node_modules/.cache)")
 
     # output/{channel}/video.mp4 로 직접 렌더 (out/ 경유 없음)
     out_dir.mkdir(parents=True, exist_ok=True)
