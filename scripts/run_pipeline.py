@@ -141,16 +141,20 @@ def inject_timeline(channel_id: str, channels: dict) -> None:
     sync = json.loads(sync_path.read_text(encoding="utf-8"))
     id_to_ms = {s["id"]: s["start_ms"] for s in sync["sentences"]}
 
-    lines = ["📌 타임라인"]
+    timecodes = []
     for ch in chapters:
         ms = id_to_ms.get(ch["sentence_id"], 0)
         m, s = divmod(ms // 1000, 60)
-        lines.append(f"{m:02d}:{s:02d} {ch['name']}")
-    timeline_block = "\n".join(lines)
+        timecodes.append(f"{m:02d}:{s:02d} {ch['name']}")
+    timeline_block = "📌 타임라인\n" + "\n".join(timecodes)
 
     desc = meta.get("description", "")
     if "{{TIMELINE}}" in desc:
-        desc = desc.replace("{{TIMELINE}}", timeline_block)
+        # {{TIMELINE}} 앞에 이미 "📌 타임라인"이 있으면 헤더 없이 타임코드만 삽입
+        if "📌 타임라인" in desc:
+            desc = desc.replace("{{TIMELINE}}", "\n".join(timecodes))
+        else:
+            desc = desc.replace("{{TIMELINE}}", timeline_block)
     elif "📌 타임라인" in desc:
         # 기존 타임라인 섹션 전체를 교체
         desc = re.sub(r"📌 타임라인\n(?:\d{2}:\d{2}[^\n]*\n?)*", timeline_block, desc)
