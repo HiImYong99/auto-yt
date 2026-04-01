@@ -23,6 +23,7 @@ def resolve_paths(channel_id: str | None) -> dict:
             "video": out_dir / "video.mp4",
             "thumbnail": out_dir / "thumbnail.png",
             "metadata_json": out_dir / "metadata.json",
+            "captions": out_dir / "captions.srt",
             "privacy": ch.get("youtube_privacy", "private"),
             "category_id": ch.get("category_id", "22"),
         }
@@ -32,6 +33,7 @@ def resolve_paths(channel_id: str | None) -> dict:
         "video": ROOT / "out" / "video.mp4",
         "thumbnail": ROOT / "out" / "thumbnail.png",
         "metadata_json": ROOT / "youtube_metadata.json",
+        "captions": ROOT / "out" / "captions.srt",
         "privacy": "private",
         "category_id": "22",
     }
@@ -95,6 +97,46 @@ def save_video_id(paths: dict, video_id: str) -> None:
     get_video_id_path(paths).write_text(video_id, encoding="utf-8")
 
 
+def upload_captions(youtube, video_id: str, caption_path: Path, label: str):
+    if not caption_path.exists():
+        return
+    from googleapiclient.http import MediaFileUpload
+    try:
+        caps = youtube.captions().list(part="id,snippet", videoId=video_id).execute()
+        ko_cap_id = next((item["id"] for item in caps.get("items", []) if item["snippet"]["language"] == "ko" and item["snippet"].get("trackKind") == "standard"), None)
+        
+        if ko_cap_id:
+            youtube.captions().update(
+                part="snippet",
+                body={
+                    "id": ko_cap_id,
+                    "snippet": {
+                        "videoId": video_id,
+                        "language": "ko",
+                        "name": "한국어",
+                        "isDraft": False
+                    }
+                },
+                media_body=MediaFileUpload(str(caption_path))
+            ).execute()
+            print(f"{label}자막(SRT) 업데이트 완료")
+        else:
+            youtube.captions().insert(
+                part="snippet",
+                body={
+                    "snippet": {
+                        "videoId": video_id,
+                        "language": "ko",
+                        "name": "한국어",
+                        "isDraft": False
+                    }
+                },
+                media_body=MediaFileUpload(str(caption_path))
+            ).execute()
+            print(f"{label}자막(SRT) 업로드 완료")
+    except Exception as e:
+        print(f"{label}자막 업로드 중 오류 발생: {e}")
+
 def upload(channel_id: str | None = None, force_new: bool = False) -> str:
     from googleapiclient.discovery import build
     from googleapiclient.http import MediaFileUpload
@@ -125,6 +167,7 @@ def upload(channel_id: str | None = None, force_new: bool = False) -> str:
                     "tags": tags,
                     "categoryId": paths["category_id"],
                     "defaultLanguage": "ko",
+                    "defaultAudioLanguage": "ko",
                 },
                 "status": {"privacyStatus": paths["privacy"]},
             },
@@ -137,6 +180,8 @@ def upload(channel_id: str | None = None, force_new: bool = False) -> str:
                 media_body=MediaFileUpload(str(paths["thumbnail"])),
             ).execute()
             print(f"{label}썸네일 완료")
+            
+        upload_captions(youtube, existing_id, paths["captions"], label)
 
         print(f"\n{'='*60}\n{label}영상: https://youtu.be/{existing_id} ({paths['privacy']})")
         print(f"{label}⚠️  영상 파일 교체는 YouTube 스튜디오에서 수동으로 진행하세요.")
@@ -154,6 +199,7 @@ def upload(channel_id: str | None = None, force_new: bool = False) -> str:
                     "tags": tags,
                     "categoryId": paths["category_id"],
                     "defaultLanguage": "ko",
+                    "defaultAudioLanguage": "ko",
                 },
                 "status": {"privacyStatus": paths["privacy"]},
             },
@@ -176,6 +222,8 @@ def upload(channel_id: str | None = None, force_new: bool = False) -> str:
                 media_body=MediaFileUpload(str(paths["thumbnail"])),
             ).execute()
             print(f"{label}썸네일 완료")
+            
+        upload_captions(youtube, video_id, paths["captions"], label)
 
         print(f"\n{'='*60}\n{label}영상: https://youtu.be/{video_id} ({paths['privacy']})\n{'='*60}")
         return video_id

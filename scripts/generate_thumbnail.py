@@ -1,238 +1,344 @@
 """
 썸네일 자동 생성 스크립트 (1280x720)
-
-스타일:
-  - 어두운 올리브 그린 배경
-  - 좌측 정렬 2줄 텍스트 (흰색 + 라임그린)
-  - 우측 상단 채널 배지 (라임그린)
-  - 우측 이모지 + 글로우
+Playwright MCP 없이 직접 실행 가능한 headless Chrome 방식
 
 사용법:
   python3 scripts/generate_thumbnail.py --channel vibe
-  python3 scripts/generate_thumbnail.py --channel vibe \
-    --line1 "2026년 AI" --line2 "생존전략 6가지" \
-    --subtitle "지금 모르면 뒤처집니다" --emoji "🧠"
+  python3 scripts/generate_thumbnail.py --channel vibe --big "AI 팀" --bottom "터미널 하나로 만들다"
 """
 
+import os
 import argparse
 import json
+import random
+import subprocess
+import tempfile
 from pathlib import Path
-
-from PIL import Image, ImageDraw, ImageFont
 
 from config import ROOT, get_channel
 
-# ─── 컬러 팔레트 ────────────────────────────────────────────────────────────
-BG_TOP    = (12, 24, 8)
-BG_BOTTOM = (6, 12, 4)
-LIME      = (170, 255, 0)
-WHITE     = (255, 255, 255)
-GRAY      = (140, 155, 130)
-BADGE_BG  = LIME
-BADGE_FG  = (10, 20, 6)
-
 W, H = 1280, 720
-LEFT_MARGIN = 80
 
-# ─── 폰트 ────────────────────────────────────────────────────────────────────
-FONT_PATHS = [
-    "/System/Library/Fonts/AppleSDGothicNeo.ttc",
-    "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
-    "/Library/Fonts/NanumGothicBold.ttf",
-]
-EMOJI_FONT_PATHS = [
-    "/System/Library/Fonts/Apple Color Emoji.ttc",
+NEON_THEMES = [
+    {"name": "cyan",    "color": "#00FFFF", "glow": "#00FFFF33", "accent": "#61DAFB"},
+    {"name": "green",   "color": "#BFFF00", "glow": "#BFFF0033", "accent": "#10B981"},
+    {"name": "pink",    "color": "#FF1493", "glow": "#FF149333", "accent": "#EC4899"},
+    {"name": "yellow",  "color": "#FFE500", "glow": "#FFE50033", "accent": "#F59E0B"},
+    {"name": "orange",  "color": "#FF5722", "glow": "#FF572233", "accent": "#F97316"},
+    {"name": "purple",  "color": "#B400FF", "glow": "#B400FF33", "accent": "#A855F7"},
 ]
 
 
-def find_font(size: int, index: int = 7) -> ImageFont.FreeTypeFont:
-    for path in FONT_PATHS:
-        p = Path(path)
-        if p.exists():
-            try:
-                return ImageFont.truetype(str(p), size, index=index)
-            except Exception:
-                try:
-                    return ImageFont.truetype(str(p), size, index=0)
-                except Exception:
-                    continue
-    return ImageFont.load_default()
+def build_html(big: str, bottom: str, theme: dict, emoji: str = "⚡") -> str:
+    color  = theme["color"]
+    glow   = theme["glow"]
+    accent = theme["accent"]
+
+    # 글자 수에 따라 폰트 크기 자동 조정
+    big_size = 220 if len(big) <= 3 else (180 if len(big) <= 6 else 140)
+    bottom_size = 96 if len(bottom) <= 10 else (78 if len(bottom) <= 16 else 62)
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * {{ margin: 0; padding: 0; box-sizing: border-box; }}
+  body {{
+    width: {W}px; height: {H}px; overflow: hidden;
+    background: #000;
+    font-family: 'Black Han Sans', 'Noto Sans KR', 'Apple SD Gothic Neo', sans-serif;
+  }}
+
+  /* 배경 그라데이션 */
+  .bg {{
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 50% 50%,
+      {glow} 0%, #000 65%);
+  }}
+
+  /* 파티클 SVG */
+  .particles {{
+    position: absolute; inset: 0;
+    opacity: 0.7;
+  }}
+
+  /* 좌측 수직 액센트 바 */
+  .bar {{
+    position: absolute;
+    left: 40px; top: 60px; bottom: 60px;
+    width: 6px; border-radius: 3px;
+    background: linear-gradient(180deg, {color}, transparent);
+    box-shadow: 0 0 20px {color}88;
+  }}
+
+  /* 큰 텍스트 */
+  .big {{
+    position: absolute;
+    left: 72px; top: 60px;
+    font-size: {big_size}px;
+    font-weight: 900;
+    color: #FFE500;
+    line-height: 1.0;
+    letter-spacing: -0.04em;
+    text-shadow:
+      -4px -4px 0 #000,
+       4px -4px 0 #000,
+      -4px  4px 0 #000,
+       4px  4px 0 #000,
+       0 0 60px #FFE50099;
+    word-break: keep-all;
+    max-width: 780px;
+  }}
+
+  /* 이모지 우측 배치 */
+  .emoji {{
+    position: absolute;
+    right: 60px; top: 50%;
+    transform: translateY(-55%);
+    font-size: 240px;
+    filter: drop-shadow(0 0 40px {color}88);
+    opacity: 0.9;
+  }}
+
+  /* 하단 텍스트 */
+  .bottom {{
+    position: absolute;
+    left: 72px; bottom: 56px;
+    font-size: {bottom_size}px;
+    font-weight: 900;
+    color: #FFFFFF;
+    letter-spacing: -0.02em;
+    text-shadow:
+      -3px -3px 0 #000,
+       3px -3px 0 #000,
+      -3px  3px 0 #000,
+       3px  3px 0 #000,
+       0 0 30px {accent}99;
+    word-break: keep-all;
+    max-width: 900px;
+  }}
+
+  /* 하단 액센트 라인 */
+  .line {{
+    position: absolute;
+    left: 72px; bottom: 44px;
+    height: 3px; width: 120px;
+    background: linear-gradient(90deg, {color}, transparent);
+    box-shadow: 0 0 12px {color};
+  }}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="bg"></div>
+
+  <svg class="particles" viewBox="0 0 {W} {H}" xmlns="http://www.w3.org/2000/svg">
+    <!-- 방사형 아크 선 -->
+    {_gen_arcs(theme)}
+    <!-- 파티클 점 -->
+    {_gen_dots(theme)}
+  </svg>
+
+  <div class="bar"></div>
+  <div class="big">{big}</div>
+  <div class="emoji">{emoji}</div>
+  <div class="bottom">{bottom}</div>
+  <div class="line"></div>
+</body>
+</html>"""
 
 
-def find_emoji_font(size: int) -> ImageFont.FreeTypeFont | None:
-    for path in EMOJI_FONT_PATHS:
-        p = Path(path)
-        if p.exists():
-            try:
-                return ImageFont.truetype(str(p), size, index=0)
-            except Exception:
-                continue
-    return None
+def _gen_arcs(theme: dict) -> str:
+    """랜덤 에너지 아크 SVG (매번 동일 시드 사용)"""
+    import math
+    color = theme["color"]
+    rng = random.Random(hash(theme["name"]) % (2**32))
+    cx, cy = W // 2, H // 2
+    lines = []
+    for _ in range(50):
+        angle = rng.uniform(0, 2 * math.pi)
+        wobble = rng.uniform(-0.4, 0.4)
+        length = rng.uniform(100, 420)
+        alpha = rng.randint(40, 160)
+        width = rng.uniform(0.8, 3.0)
+        x1 = cx + int(math.cos(angle) * 20)
+        y1 = cy + int(math.sin(angle) * 20)
+        x2 = cx + int(math.cos(angle + wobble) * length)
+        y2 = cy + int(math.sin(angle + wobble) * length)
+        hex_alpha = f"{alpha:02x}"
+        lines.append(
+            f'<line x1="{x1}" y1="{y1}" x2="{x2}" y2="{y2}" '
+            f'stroke="{color}{hex_alpha}" stroke-width="{width:.1f}"/>'
+        )
+    return "\n    ".join(lines)
 
 
-def draw_gradient_bg(img: Image.Image) -> None:
-    draw = ImageDraw.Draw(img)
-    for y in range(H):
-        t = y / H
-        r = int(BG_TOP[0] + (BG_BOTTOM[0] - BG_TOP[0]) * t)
-        g = int(BG_TOP[1] + (BG_BOTTOM[1] - BG_TOP[1]) * t)
-        b = int(BG_TOP[2] + (BG_BOTTOM[2] - BG_TOP[2]) * t)
-        draw.line([(0, y), (W, y)], fill=(r, g, b))
+def _gen_dots(theme: dict) -> str:
+    """랜덤 파티클 점 SVG"""
+    import math
+    color = theme["color"]
+    rng = random.Random(hash(theme["name"] + "dots") % (2**32))
+    cx, cy = W // 2, H // 2
+    circles = []
+    for _ in range(80):
+        angle = rng.uniform(0, 2 * math.pi)
+        dist = rng.uniform(60, 450)
+        px = cx + int(math.cos(angle) * dist)
+        py = cy + int(math.sin(angle) * dist)
+        size = rng.uniform(1.5, 7)
+        alpha = rng.randint(80, 220)
+        hex_alpha = f"{alpha:02x}"
+        circles.append(
+            f'<circle cx="{px}" cy="{py}" r="{size:.1f}" fill="{color}{hex_alpha}"/>'
+        )
+    return "\n    ".join(circles)
 
 
-def draw_glow(img: Image.Image, cx: int, cy: int, color: tuple, radius: int = 200) -> None:
-    """특정 위치에 방사형 글로우"""
-    from PIL import Image as PILImage
-    overlay = PILImage.new("RGBA", (W, H), (0, 0, 0, 0))
-    od = ImageDraw.Draw(overlay)
-    for i in range(10):
-        alpha = max(0, 30 - i * 3)
-        r = radius + i * 28
-        od.ellipse([cx - r, cy - r, cx + r, cy + r],
-                   fill=(color[0], color[1], color[2], alpha))
-    base = img.convert("RGBA")
-    merged = PILImage.alpha_composite(base, overlay)
-    img.paste(merged.convert("RGB"), (0, 0))
-
-
-def draw_channel_badge(draw: ImageDraw.ImageDraw, label: str) -> None:
-    """우측 상단 채널 배지"""
-    font = find_font(34, 6)
-    bbox = draw.textbbox((0, 0), label, font=font)
-    tw = bbox[2] - bbox[0]
-    pad_x, pad_y = 24, 14
-    bw = tw + pad_x * 2
-    bh = (bbox[3] - bbox[1]) + pad_y * 2
-    bx = W - bw - 50
-    by = 44
-    draw.rounded_rectangle([bx, by, bx + bw, by + bh], radius=10, fill=BADGE_BG)
-    draw.text((bx + pad_x, by + pad_y), label, font=font, fill=BADGE_FG)
-
-
-def draw_emoji(img: Image.Image, emoji: str, cx: int, cy: int, size: int = 220) -> None:
-    """이모지 렌더링 (Apple Color Emoji 폰트 사용)
-    Apple Color Emoji는 bitmap 폰트라 지원 크기: 20, 32, 40, 48, 64, 96, 160
-    size보다 작거나 같은 최대 지원 크기로 렌더 후 원하는 크기로 리사이즈
-    """
-    supported = [160, 96, 64, 48, 40, 32, 20]
-    render_size = next((s for s in supported if s <= size), 160)
-
-    font = find_emoji_font(render_size)
-    if font is None:
-        return
-
-    canvas_size = render_size * 3
-    tmp = Image.new("RGBA", (canvas_size, canvas_size), (0, 0, 0, 0))
-    td = ImageDraw.Draw(tmp)
-    td.text((render_size // 2, render_size // 4), emoji, font=font, embedded_color=True)
-
-    # 실제 이모지가 그려진 영역만 크롭
-    bbox = tmp.getbbox()
-    if bbox is None:
-        return
-    cropped = tmp.crop(bbox)
-
-    # 원하는 size로 리사이즈
-    cw, ch = cropped.size
-    scale = size / max(cw, ch)
-    new_w = int(cw * scale)
-    new_h = int(ch * scale)
-    resized = cropped.resize((new_w, new_h), Image.LANCZOS)
-
-    paste_x = cx - new_w // 2
-    paste_y = cy - new_h // 2
-    img.paste(resized, (paste_x, paste_y), resized)
-
-
-def text_height(draw: ImageDraw.ImageDraw, text: str, font) -> int:
-    bbox = draw.textbbox((0, 0), text, font=font)
-    return bbox[3] - bbox[1]
-
-
-def generate_thumbnail(
+def generate_thumbnail_playwright(
     channel_id: str,
-    line1: str | None = None,
-    line2: str | None = None,
-    subtitle: str | None = None,
-    emoji: str = "🧠",
+    big: str | None = None,
+    bottom: str | None = None,
+    emoji: str | None = None,
 ) -> Path:
+    """HTML 렌더링 → Playwright로 PNG 캡처"""
     _, ch = get_channel(channel_id)
     out_dir = ROOT / ch["output_dir"]
     out_dir.mkdir(parents=True, exist_ok=True)
     out_path = out_dir / "thumbnail.png"
 
     # metadata.json에서 텍스트 파싱
-    if line1 is None or line2 is None:
-        meta_path = out_dir / "metadata.json"
-        if meta_path.exists():
-            meta = json.loads(meta_path.read_text(encoding="utf-8"))
-            raw = meta.get("optimized_title", meta.get("title", ""))
-            parts = [p.strip() for p in raw.split("|")]
-            main = parts[0]
-            # 공백 기준으로 앞/뒤 분리 (가운데 토큰 기준)
-            tokens = main.split()
-            mid = max(1, len(tokens) // 2)
-            line1 = line1 or " ".join(tokens[:mid])
-            line2 = line2 or " ".join(tokens[mid:])
-            if subtitle is None and len(parts) > 1:
-                subtitle = parts[1]
-            if emoji == "🧠":
-                emoji = meta.get("thumbnail_emoji", "🧠")
-        else:
-            line1 = line1 or "AI 생존전략"
-            line2 = line2 or "6가지 핵심 무기"
+    meta_path = out_dir / "metadata.json"
+    if meta_path.exists():
+        meta = json.loads(meta_path.read_text(encoding="utf-8"))
+        big    = big    or meta.get("thumbnail_big", "AI")
+        bottom = bottom or meta.get("thumbnail_bottom", "지금 시작하세요")
+        emoji  = emoji  or meta.get("thumbnail_emoji", "⚡")
+    else:
+        big    = big    or "AI"
+        bottom = bottom or "지금 시작하세요"
+        emoji  = emoji  or "⚡"
 
-    subtitle = subtitle or "지금 모르면 뒤처집니다"
+    theme = random.choice(NEON_THEMES)
+    print(f"  썸네일 테마: {theme['name']}")
 
-    # ── 캔버스 ──────────────────────────────────────────────────────────────
-    img = Image.new("RGB", (W, H))
-    draw_gradient_bg(img)
+    html = build_html(big, bottom, theme, emoji)
 
-    # 우측 글로우 (이모지 위치 기준)
-    draw_glow(img, cx=980, cy=380, color=(100, 200, 0), radius=180)
+    # 임시 HTML 파일 저장
+    html_path = out_dir / "_thumbnail_tmp.html"
+    html_path.write_text(html, encoding="utf-8")
 
-    draw = ImageDraw.Draw(img)
+    # Playwright CLI로 스크린샷 (npx playwright screenshot)
+    try:
+        result = subprocess.run(
+            [
+                "npx", "playwright", "screenshot",
+                "--browser", "chromium",
+                "--viewport-size", f"{W},{H}",
+                f"file://{html_path.resolve()}",
+                str(out_path),
+            ],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        if result.returncode != 0:
+            raise RuntimeError(result.stderr or result.stdout)
+        print(f"  썸네일 저장 (Playwright): {out_path}")
+    except Exception as e:
+        # Playwright 없을 경우 PIL 폴백
+        print(f"  Playwright 실패 ({e}), PIL 폴백 사용")
+        _pil_fallback(big, bottom, theme, out_path)
+    finally:
+        html_path.unlink(missing_ok=True)
 
-    # ── 채널 배지 (우측 상단) ────────────────────────────────────────────────
-    draw_channel_badge(draw, ch.get("display_name", channel_id))
-
-    # ── 메인 텍스트 (좌측 정렬) ──────────────────────────────────────────────
-    font_big = find_font(118, 7)
-    font_sub = find_font(46, 4)
-
-    # 텍스트 블록 전체 높이 계산 → 세로 중앙 정렬
-    h1 = text_height(draw, line1, font_big)
-    h2 = text_height(draw, line2, font_big)
-    hs = text_height(draw, subtitle, font_sub)
-    gap = 12
-    gap_sub = 28
-    total_h = h1 + gap + h2 + gap_sub + hs
-    start_y = (H - total_h) // 2 - 20  # 살짝 위로
-
-    draw.text((LEFT_MARGIN, start_y), line1, font=font_big, fill=WHITE)
-    draw.text((LEFT_MARGIN, start_y + h1 + gap), line2, font=font_big, fill=LIME)
-    draw.text(
-        (LEFT_MARGIN + 4, start_y + h1 + gap + h2 + gap_sub),
-        subtitle, font=font_sub, fill=GRAY
-    )
-
-    # ── 이모지 (우측) ────────────────────────────────────────────────────────
-    draw_emoji(img, emoji, cx=990, cy=390, size=240)
-
-    img.save(str(out_path), "PNG", optimize=True)
-    print(f"[{channel_id}] 썸네일 저장: {out_path}")
+    print(f"[{channel_id}] 썸네일 완료: {out_path}")
     return out_path
 
 
+def _pil_fallback(big: str, bottom: str, theme: dict, out_path: Path):
+    """Playwright 없을 때 PIL로 기본 썸네일 생성"""
+    import math
+    from PIL import Image, ImageDraw, ImageFont
+
+    color_hex = theme["color"].lstrip("#")
+    color = tuple(int(color_hex[i:i+2], 16) for i in (0, 2, 4))
+
+    img = Image.new("RGB", (W, H), (0, 0, 0))
+    draw = ImageDraw.Draw(img, "RGBA")
+    cx, cy = W // 2, H // 2
+
+    # 방사형 글로우
+    for r in range(340, 0, -5):
+        alpha = int(55 * (1 - r / 340) ** 2)
+        draw.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(*color, alpha))
+
+    # 에너지 아크
+    rng = random.Random(hash(theme["name"]) % (2**32))
+    for _ in range(55):
+        angle = rng.uniform(0, 2 * math.pi)
+        wobble = rng.uniform(-0.4, 0.4)
+        length = rng.uniform(100, 430)
+        alpha = rng.randint(40, 160)
+        width = rng.randint(1, 3)
+        x1 = cx + int(math.cos(angle) * 20)
+        y1 = cy + int(math.sin(angle) * 20)
+        x2 = cx + int(math.cos(angle + wobble) * length)
+        y2 = cy + int(math.sin(angle + wobble) * length)
+        draw.line([x1, y1, x2, y2], fill=(*color, alpha), width=width)
+
+    # 텍스트
+    font_paths = [
+        str(ROOT / "fonts" / "BlackHanSans-Regular.ttf"),
+        "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+    ]
+
+    def load_font(size):
+        for p in font_paths:
+            if Path(p).exists():
+                try:
+                    return ImageFont.truetype(p, size)
+                except Exception:
+                    continue
+        return ImageFont.load_default()
+
+    YELLOW = (255, 229, 0)
+    WHITE = (255, 255, 255)
+    BLACK = (10, 10, 10)
+
+    big_size = 200 if len(big) <= 3 else (160 if len(big) <= 6 else 130)
+    font_big = load_font(big_size)
+    draw.text((60, 50), big, font=font_big, fill=YELLOW, stroke_width=14, stroke_fill=BLACK)
+
+    bottom_size = 90 if len(bottom) <= 10 else 70
+    font_bottom = load_font(bottom_size)
+    draw.text((60, H - 130), bottom, font=font_bottom, fill=WHITE, stroke_width=10, stroke_fill=BLACK)
+
+    img.save(str(out_path), "PNG")
+    print(f"  PIL 폴백 썸네일 저장: {out_path}")
+
+
+# ── 하위 호환 alias ──────────────────────────────────────────
+def generate_thumbnail(
+    channel_id: str,
+    big: str | None = None,
+    bottom: str | None = None,
+    visual_prompt: str | None = None,
+    no_regen: bool = False,
+) -> Path:
+    return generate_thumbnail_playwright(channel_id, big, bottom)
+
+
 def main():
-    parser = argparse.ArgumentParser(description="썸네일 생성")
-    parser.add_argument("--channel", required=True, help="채널 ID")
-    parser.add_argument("--line1", help="첫 번째 줄 (흰색)")
-    parser.add_argument("--line2", help="두 번째 줄 (라임그린)")
-    parser.add_argument("--subtitle", help="서브타이틀 (회색)")
-    parser.add_argument("--emoji", default="🧠", help="우측 이모지")
+    parser = argparse.ArgumentParser(description="썸네일 생성 (Playwright)")
+    parser.add_argument("--channel", required=True)
+    parser.add_argument("--big",    help="큰 텍스트 (1~2단어)")
+    parser.add_argument("--bottom", help="하단 문구")
+    parser.add_argument("--emoji",  help="이모지")
     a = parser.parse_args()
-    generate_thumbnail(a.channel, a.line1, a.line2, a.subtitle, a.emoji)
+    generate_thumbnail_playwright(a.channel, a.big, a.bottom, a.emoji)
 
 
 if __name__ == "__main__":

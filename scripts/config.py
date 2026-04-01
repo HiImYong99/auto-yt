@@ -5,7 +5,10 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
-SCOPES = ["https://www.googleapis.com/auth/youtube"]
+SCOPES = [
+    "https://www.googleapis.com/auth/youtube",
+    "https://www.googleapis.com/auth/youtube.force-ssl"
+]
 
 
 def load_config() -> dict:

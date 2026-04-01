@@ -6,62 +6,63 @@ interface SubtitleProps {
   sentences: SentenceData[];
 }
 
-const MAX_WORDS = 5;
 const FADE_FRAMES = 4;
 
-interface WordGroup {
+interface SubtitleEntry {
   text: string;
   start_ms: number;
   end_ms: number;
 }
 
-function buildWordGroups(sentences: SentenceData[]): WordGroup[] {
-  const groups: WordGroup[] = [];
-  for (const sentence of sentences) {
-    // 원본 문장 텍스트를 5단어씩 분할 (whisper 인식 단어 대신)
-    const words = sentence.text.trim().split(/\s+/).filter(Boolean);
-    const numGroups = Math.ceil(words.length / MAX_WORDS);
-    const sentDur = sentence.end_ms - sentence.start_ms;
+function buildEntries(sentences: SentenceData[]): SubtitleEntry[] {
+  const entries: SubtitleEntry[] = sentences
+    .filter((s) => s.text.trim().length > 0)
+    .map((s) => ({
+      text: s.text.trim(),
+      start_ms: s.start_ms,
+      end_ms: s.end_ms,
+    }));
 
-    for (let i = 0; i < words.length; i += MAX_WORDS) {
-      const chunk = words.slice(i, i + MAX_WORDS);
-      const groupIdx = Math.floor(i / MAX_WORDS);
-      const isLast = groupIdx === numGroups - 1;
-      // 문장 시간을 그룹 수로 균등 분배
-      const groupStart = sentence.start_ms + Math.round(sentDur * groupIdx / numGroups);
-      const groupEnd = isLast
-        ? sentence.end_ms
-        : sentence.start_ms + Math.round(sentDur * (groupIdx + 1) / numGroups);
-      groups.push({
-        text: chunk.join(" "),
-        start_ms: groupStart,
-        end_ms: Math.max(groupEnd, groupStart + 1),
-      });
+  // 문장 사이 갭을 자막이 채우도록 end_ms 연장 (최대 2500ms)
+  for (let i = 0; i < entries.length - 1; i++) {
+    const gap = entries[i + 1].start_ms - entries[i].end_ms;
+    if (gap > 0 && gap <= 2500) {
+      entries[i].end_ms = entries[i + 1].start_ms;
     }
   }
-  return groups;
+
+  return entries;
+}
+
+// 문장 길이에 따라 폰트 크기 자동 조정
+function getFontSize(text: string): number {
+  const len = text.length;
+  if (len <= 10) return 46;
+  if (len <= 18) return 42;
+  if (len <= 28) return 38;
+  return 34;
 }
 
 export const Subtitle: React.FC<SubtitleProps> = ({ sentences }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const groups = React.useMemo(() => buildWordGroups(sentences), [sentences]);
+  const entries = React.useMemo(() => buildEntries(sentences), [sentences]);
 
   const currentMs = (frame / fps) * 1000;
-  const activeIdx = groups.findIndex(
-    (g) => currentMs >= g.start_ms && currentMs <= g.end_ms
+  const activeIdx = entries.findIndex(
+    (e) => currentMs >= e.start_ms && currentMs < e.end_ms
   );
 
   if (activeIdx === -1) return null;
 
-  const group = groups[activeIdx];
-  const groupStartFrame = (group.start_ms / 1000) * fps;
-  const groupEndFrame = (group.end_ms / 1000) * fps;
-  const elapsed = frame - groupStartFrame;
-  const duration = groupEndFrame - groupStartFrame;
+  const entry = entries[activeIdx];
+  const entryStartFrame = (entry.start_ms / 1000) * fps;
+  const entryEndFrame = (entry.end_ms / 1000) * fps;
+  const elapsed = frame - entryStartFrame;
+  const duration = entryEndFrame - entryStartFrame;
 
-  const fadeIn = Math.min(FADE_FRAMES, duration / 2);
+  const fadeIn = Math.min(FADE_FRAMES, duration / 3);
   const fadeOut = Math.max(duration - fadeIn, fadeIn + 0.01);
   const opacity = interpolate(
     elapsed,
@@ -69,18 +70,20 @@ export const Subtitle: React.FC<SubtitleProps> = ({ sentences }) => {
     [0, 1, 1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
-  const translateY = interpolate(elapsed, [0, FADE_FRAMES], [14, 0], {
+  const translateY = interpolate(elapsed, [0, FADE_FRAMES], [12, 0], {
     extrapolateLeft: "clamp",
     extrapolateRight: "clamp",
   });
+
+  const fontSize = getFontSize(entry.text);
 
   return (
     <div
       style={{
         position: "absolute",
         bottom: 72,
-        left: "8%",
-        right: "8%",
+        left: "6%",
+        right: "6%",
         textAlign: "center",
         opacity,
         transform: `translateY(${translateY}px)`,
@@ -89,26 +92,27 @@ export const Subtitle: React.FC<SubtitleProps> = ({ sentences }) => {
       <div
         style={{
           display: "inline-block",
-          padding: "14px 36px",
+          padding: "14px 44px",
           borderRadius: 14,
-          background: "rgba(0,0,0,0.58)",
-          backdropFilter: "blur(14px)",
-          border: "1px solid rgba(255,255,255,0.07)",
-          maxWidth: "100%",
-          whiteSpace: "nowrap",
+          background: "rgba(13,17,23,0.75)",
+          backdropFilter: "blur(16px)",
+          border: "1px solid rgba(97,218,251,0.14)",
+          maxWidth: "90%",
         }}
       >
         <span
           style={{
-            fontSize: 40,
-            fontWeight: 500,
-            color: "rgba(255,255,255,0.92)",
-            fontFamily: "'Apple SD Gothic Neo','Noto Sans KR',sans-serif",
+            fontSize,
+            fontWeight: 600,
+            color: "#F3F4F6",
+            fontFamily: "'Pretendard','Noto Sans KR',sans-serif",
             letterSpacing: "-0.01em",
-            textShadow: "0 1px 4px rgba(0,0,0,0.5)",
+            textShadow: "0 1px 6px rgba(0,0,0,0.7)",
+            wordBreak: "keep-all",
+            lineHeight: 1.5,
           }}
         >
-          {group.text}
+          {entry.text}
         </span>
       </div>
     </div>

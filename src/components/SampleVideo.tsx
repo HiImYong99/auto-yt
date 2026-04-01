@@ -8,322 +8,574 @@ import {
 } from "remotion";
 
 // ─────────────────────────────────────────────────────────────
-// Design Tokens (공유)
+// Design Tokens
 // ─────────────────────────────────────────────────────────────
-const TEXT    = "#FFFFFF";
-const MUTED   = "#A1A1AA";
-const ACCENT  = "#FF6B6B";
-const SURFACE = "#1E1E1E";
+const BG      = "#0D1117";
+const SURFACE = "#161B22";
+const TEXT    = "#F3F4F6";
+const MUTED   = "#9CA3AF";
+const CYAN    = "#61DAFB";
+const PURPLE  = "#A855F7";
+const RED     = "#EF4444";
+const GREEN   = "#10B981";
+const YELLOW  = "#F59E0B";
 const BORDER  = "rgba(255,255,255,0.08)";
-const FONT    = "'Apple SD Gothic Neo','Noto Sans KR',sans-serif";
-const MONO    = "'SF Mono','Fira Code',monospace";
+const FONT    = "'Pretendard','Noto Sans KR',sans-serif";
+const MONO    = "'Fira Code','JetBrains Mono','SF Mono',monospace";
 
 // ─────────────────────────────────────────────────────────────
 // Background
 // ─────────────────────────────────────────────────────────────
 const Background: React.FC = () => (
-  <div style={{ position: "absolute", inset: 0, background: "#121212", overflow: "hidden" }}>
-    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.05 }}>
+  <div style={{
+    position: "absolute", inset: 0,
+    background: "linear-gradient(135deg, #0D1117 0%, #141B2D 55%, #1A1F2E 100%)",
+    overflow: "hidden",
+  }}>
+    <svg style={{ position: "absolute", inset: 0, width: "100%", height: "100%", opacity: 0.09 }}>
       <defs>
-        <pattern id="sdots" x="0" y="0" width="64" height="64" patternUnits="userSpaceOnUse">
-          <circle cx="1" cy="1" r="1" fill="#ffffff" />
+        <pattern id="g" x="0" y="0" width="80" height="80" patternUnits="userSpaceOnUse">
+          <path d="M 80 0 L 0 0 0 80" fill="none" stroke={CYAN} strokeWidth="0.5" />
         </pattern>
       </defs>
-      <rect width="100%" height="100%" fill="url(#sdots)" />
+      <rect width="100%" height="100%" fill="url(#g)" />
     </svg>
     <div style={{
       position: "absolute", inset: 0,
-      background: "radial-gradient(ellipse at center, transparent 42%, rgba(0,0,0,0.52) 100%)",
+      background: "radial-gradient(ellipse at center, transparent 28%, rgba(0,0,0,0.75) 100%)",
+    }} />
+    <div style={{
+      position: "absolute", width: 700, height: 700, left: -280, top: -280,
+      background: `radial-gradient(circle, rgba(97,218,251,0.07) 0%, transparent 70%)`,
+      borderRadius: "50%",
+    }} />
+    <div style={{
+      position: "absolute", width: 800, height: 800, right: -320, bottom: -320,
+      background: `radial-gradient(circle, rgba(168,85,247,0.06) 0%, transparent 70%)`,
+      borderRadius: "50%",
     }} />
   </div>
 );
 
 // ─────────────────────────────────────────────────────────────
-// useSlideUp hook
+// Shared helpers
 // ─────────────────────────────────────────────────────────────
-function useSlideUp(delay = 0, totalDur = 90) {
+function useEntrance(delay = 0, dur = 90) {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const f = Math.max(0, frame - delay);
   const opacity = interpolate(
-    f, [0, 10, Math.max(11, totalDur - 14), totalDur], [0, 1, 1, 0],
+    f, [0, 10, Math.max(11, dur - 12), dur], [0, 1, 1, 0],
     { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
   );
-  const sp = spring({ fps, frame: f, config: { damping: 18, stiffness: 115 } });
-  const translateY = interpolate(sp, [0, 1], [38, 0]);
-  return { opacity, translateY };
+  const sp = spring({ fps, frame: f, config: { damping: 14, stiffness: 180 } });
+  const y = interpolate(sp, [0, 1], [40, 0]);
+  return { opacity, y };
 }
 
-// ─────────────────────────────────────────────────────────────
-// Progress Bar
-// ─────────────────────────────────────────────────────────────
-const ProgressBar: React.FC<{ total: number }> = ({ total }) => {
-  const frame = useCurrentFrame();
-  return (
-    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.07)" }}>
-      <div style={{ width: `${(frame / total) * 100}%`, height: "100%", background: ACCENT }} />
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────
-// Scene 1 — Hero Title (0–130, 4.3s)
-// ─────────────────────────────────────────────────────────────
-const Scene1: React.FC<{ dur: number }> = ({ dur }) => {
-  const frame = useCurrentFrame();
-  const { opacity: op1, translateY: ty1 } = useSlideUp(0, dur);
-  const { opacity: op2, translateY: ty2 } = useSlideUp(10, dur);
-  const { opacity: op3, translateY: ty3 } = useSlideUp(20, dur);
-  const lineW = interpolate(frame, [14, 46], [0, 100], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 28 }}>
-      <div style={{ opacity: op1, transform: `translateY(${ty1}px)`, fontSize: 22, fontWeight: 700, letterSpacing: "0.22em", color: ACCENT, fontFamily: FONT, textTransform: "uppercase" }}>
-        Design System · 2026
-      </div>
-
-      <div style={{ opacity: op2, transform: `translateY(${ty2}px)`, textAlign: "center" }}>
-        <div style={{ fontSize: 128, fontWeight: 900, color: TEXT, fontFamily: FONT, letterSpacing: "-0.04em", lineHeight: 1.08 }}>
-          음성 AI의
-        </div>
-        <div style={{ fontSize: 128, fontWeight: 900, color: ACCENT, fontFamily: FONT, letterSpacing: "-0.04em", lineHeight: 1.08, textShadow: `0 0 80px ${ACCENT}44` }}>
-          혁명
-        </div>
-        <div style={{ height: 5, borderRadius: 3, marginTop: 20, background: `linear-gradient(90deg, ${ACCENT}, ${ACCENT}55)`, width: `${lineW}%`, boxShadow: `0 0 22px ${ACCENT}88` }} />
-      </div>
-
-      <div style={{ opacity: op3, transform: `translateY(${ty3}px)`, fontSize: 30, color: MUTED, fontFamily: FONT, letterSpacing: "0.03em" }}>
-        알리바바 Qwen3-TTS — 오픈소스 완전 공개
-      </div>
-    </div>
-  );
-};
-
-// ─────────────────────────────────────────────────────────────
-// Scene 2 — FeatureCard × 3 Stagger (115–265, 5s)
-// ─────────────────────────────────────────────────────────────
-const FEATURES = [
-  { icon: "⚡", title: "0.1초 반응", sub: "눈 깜빡임보다 빠른\n즉각적인 음성 출력" },
-  { icon: "✍️", title: "텍스트로 설계", sub: "원하는 목소리를\n한 줄 문장으로 묘사" },
-  { icon: "🌍", title: "3초 클로닝", sub: "짧은 녹음으로\n다국어까지 즉시 지원" },
-];
-
-const FeatureCard: React.FC<{ icon: string; title: string; sub: string; delay: number; dur: number }> = ({ icon, title, sub, delay, dur }) => {
-  const { fps } = useVideoConfig();
-  const frame = useCurrentFrame();
-  const f = Math.max(0, frame - delay);
-  const opacity = interpolate(f, [0, 10, Math.max(11, dur - 14), dur], [0, 1, 1, 0], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const sp = spring({ fps, frame: f, config: { damping: 16, stiffness: 110, mass: 1.1 } });
-  const translateY = interpolate(sp, [0, 1], [52, 0]);
-  const scale = interpolate(sp, [0, 1], [0.92, 1]);
-
-  return (
-    <div style={{ opacity, transform: `translateY(${translateY}px) scale(${scale})`, background: SURFACE, border: `1px solid ${BORDER}`, borderRadius: 28, padding: "44px 52px", display: "flex", flexDirection: "column", gap: 18, width: 468 }}>
-      <div style={{ fontSize: 68 }}>{icon}</div>
-      <div style={{ fontSize: 44, fontWeight: 800, color: TEXT, fontFamily: FONT, letterSpacing: "-0.02em" }}>{title}</div>
-      <div style={{ fontSize: 26, color: MUTED, fontFamily: FONT, lineHeight: 1.6, whiteSpace: "pre-line" }}>{sub}</div>
-      <div style={{ height: 3, width: 48, borderRadius: 2, background: ACCENT, boxShadow: `0 0 14px ${ACCENT}77`, marginTop: 6 }} />
-    </div>
-  );
-};
-
-const Scene2: React.FC<{ dur: number }> = ({ dur }) => (
-  <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 32, padding: "0 90px" }}>
-    {FEATURES.map((f, i) => <FeatureCard key={i} {...f} delay={i * 9} dur={dur} />)}
+const MacDots: React.FC = () => (
+  <div style={{ display: "flex", gap: 8, alignItems: "center", flexShrink: 0 }}>
+    {[RED, YELLOW, GREEN].map((c, i) => (
+      <div key={i} style={{ width: 13, height: 13, borderRadius: "50%", background: c, opacity: 0.85 }} />
+    ))}
   </div>
 );
 
-// ─────────────────────────────────────────────────────────────
-// Scene 3 — MockupDevice: phone (255–395, 4.7s)
-// ─────────────────────────────────────────────────────────────
-const Scene3: React.FC<{ dur: number }> = ({ dur }) => {
+const ProgressBar: React.FC<{ total: number }> = ({ total }) => {
   const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-  const { opacity, translateY } = useSlideUp(0, dur);
-  const { opacity: opLabel, translateY: tyLabel } = useSlideUp(0, dur);
+  return (
+    <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 3, background: "rgba(255,255,255,0.06)" }}>
+      <div style={{
+        width: `${(frame / total) * 100}%`, height: "100%",
+        background: `linear-gradient(90deg, ${CYAN}, ${PURPLE})`,
+        boxShadow: `0 0 10px ${CYAN}66`,
+      }} />
+    </div>
+  );
+};
 
-  const chats = [
-    { text: "목소리 클로닝 해줘", user: true },
-    { text: "3초 녹음 파일을...", user: false },
-    { text: "완료! 다국어 지원됩니다", user: false },
-  ];
-  const PW = 260, PH = 480;
+// ─────────────────────────────────────────────────────────────
+// S1 — Hero Title  (0–130)
+// ─────────────────────────────────────────────────────────────
+const Scene1: React.FC<{ dur: number }> = ({ dur }) => {
+  const frame = useCurrentFrame();
+  const { opacity: o1, y: y1 } = useEntrance(0, dur);
+  const { opacity: o2, y: y2 } = useEntrance(14, dur);
+  const { opacity: o3, y: y3 } = useEntrance(28, dur);
+
+  const cursor = Math.floor(frame / 18) % 2 === 0;
+  const lineW = interpolate(frame, [22, 60], [0, 100], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", gap: 100 }}>
-      {/* Label */}
-      <div style={{ opacity: opLabel, transform: `translateY(${tyLabel}px)`, maxWidth: 440, textAlign: "right" }}>
-        <div style={{ fontSize: 22, fontWeight: 700, letterSpacing: "0.16em", color: MUTED, textTransform: "uppercase", fontFamily: FONT, marginBottom: 16 }}>
-          MockupDevice
-        </div>
-        <div style={{ fontSize: 48, fontWeight: 800, color: TEXT, fontFamily: FONT, letterSpacing: "-0.02em", lineHeight: 1.2 }}>
-          AI 상담원,<br />눈앞의 사람처럼
-        </div>
-        <div style={{ fontSize: 24, color: MUTED, fontFamily: FONT, marginTop: 16, lineHeight: 1.6 }}>
-          0.1초 반응 속도로 지연 시간이라는<br />벽이 완전히 사라진다
-        </div>
+    <div style={{
+      position: "absolute", inset: 0, display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 36,
+    }}>
+      <div style={{
+        opacity: o1, transform: `translateY(${y1}px)`,
+        display: "flex", alignItems: "center", gap: 10,
+        padding: "8px 22px", borderRadius: 100,
+        border: `1px solid ${CYAN}40`, background: `${CYAN}0C`,
+      }}>
+        <div style={{ width: 8, height: 8, borderRadius: "50%", background: GREEN, boxShadow: `0 0 10px ${GREEN}` }} />
+        <span style={{ fontSize: 17, color: CYAN, fontFamily: MONO, letterSpacing: "0.12em" }}>
+          IDE Design System · 2026
+        </span>
       </div>
 
-      {/* Phone SVG */}
-      <div style={{ opacity, transform: `translateY(${translateY}px)` }}>
-        <svg width={PW} height={PH} viewBox={`0 0 ${PW} ${PH}`}>
-          {/* Shell */}
-          <rect x={2} y={2} width={PW - 4} height={PH - 4} rx={36} ry={36} fill="#1A1A1A" stroke="rgba(255,255,255,0.1)" strokeWidth={1.5} />
-          {/* Notch */}
-          <rect x={PW / 2 - 34} y={12} width={68} height={16} rx={8} fill="#2A2A2A" />
-          {/* Screen */}
-          <rect x={16} y={44} width={PW - 32} height={PH - 88} rx={10} fill="#111" />
-          {/* Status bar */}
-          <text x={28} y={72} fontSize={13} fill={MUTED} fontFamily={FONT}>9:41</text>
-          <text x={PW - 28} y={72} fontSize={13} fill={MUTED} fontFamily={FONT} textAnchor="end">●●●</text>
-          {/* Divider */}
-          <line x1={16} y1={82} x2={PW - 16} y2={82} stroke="rgba(255,255,255,0.06)" strokeWidth={1} />
+      <div style={{ opacity: o2, transform: `translateY(${y2}px)`, textAlign: "center" }}>
+        <div style={{ fontSize: 112, fontWeight: 900, color: TEXT, fontFamily: FONT, letterSpacing: "-0.04em", lineHeight: 1.05 }}>
+          개발자를 위한
+        </div>
+        <div style={{
+          fontSize: 112, fontWeight: 900, fontFamily: FONT, letterSpacing: "-0.04em", lineHeight: 1.05,
+          background: `linear-gradient(90deg, ${CYAN}, ${PURPLE})`,
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+        }}>
+          영상 디자인{cursor ? "_" : "\u00A0"}
+        </div>
+        <div style={{
+          height: 4, borderRadius: 2, marginTop: 22, marginInline: "auto",
+          background: `linear-gradient(90deg, ${CYAN}, ${PURPLE})`,
+          width: `${lineW}%`, boxShadow: `0 0 24px ${CYAN}55`,
+        }} />
+      </div>
 
-          {chats.map((chat, i) => {
-            const delay = i * 14;
-            const f2 = Math.max(0, frame - delay);
-            const chatOp = interpolate(f2, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-            const sp2 = spring({ fps, frame: f2, config: { damping: 20, stiffness: 140 } });
-            const chatTy = interpolate(sp2, [0, 1], [14, 0]);
-            const bw = Math.min(170, chat.text.length * 8.5 + 28);
-            const bx = chat.user ? PW - 16 - 14 - bw : 16 + 14;
-            const by = 100 + i * 88;
-
-            return (
-              <g key={i} style={{ opacity: chatOp, transform: `translateY(${chatTy}px)` }}>
-                <rect x={bx} y={by} width={bw} height={58} rx={16}
-                  fill={chat.user ? ACCENT : "#2C2C2C"}
-                />
-                <foreignObject x={bx + 10} y={by + 10} width={bw - 20} height={38}>
-                  <div style={{ fontSize: 13.5, color: chat.user ? "#fff" : MUTED, fontFamily: FONT, lineHeight: "18px" }}>
-                    {chat.text}
-                  </div>
-                </foreignObject>
-              </g>
-            );
-          })}
-          {/* Home bar */}
-          <rect x={PW / 2 - 44} y={PH - 22} width={88} height={5} rx={3} fill="#2A2A2A" />
-        </svg>
+      <div style={{
+        opacity: o3, transform: `translateY(${y3}px)`,
+        fontSize: 24, color: "#6A9955", fontFamily: MONO, fontStyle: "italic",
+      }}>
+        {'// Remotion · Spring Physics · IDE Aesthetic'}
       </div>
     </div>
   );
 };
 
 // ─────────────────────────────────────────────────────────────
-// Scene 4 — AnimatedArrow + 비교 흐름 (380–520, 4.7s)
+// S2 — CodeBlock  (133–273)  ← IDE 적재적소 사용
 // ─────────────────────────────────────────────────────────────
-const Scene4: React.FC<{ dur: number }> = ({ dur }) => {
+type LineKind = "normal" | "highlight" | "comment" | "empty";
+const CODE_LINES: Array<{ code: string; kind: LineKind }> = [
+  { code: "import { Qwen3TTS } from '@qwen/tts';",        kind: "normal"    },
+  { code: "",                                              kind: "empty"     },
+  { code: "const tts = new Qwen3TTS({",                   kind: "highlight" },
+  { code: "  refAudio: 'ref_voice.wav',  // 목소리 클로닝", kind: "highlight" },
+  { code: "  language: 'auto',          // 다국어 자동",    kind: "normal"    },
+  { code: "  speed:    1.0,",                             kind: "normal"    },
+  { code: "});",                                          kind: "normal"    },
+  { code: "",                                              kind: "empty"     },
+  { code: "// 텍스트 → 음성 변환",                          kind: "comment"   },
+  { code: "const audio = await tts.generate(",            kind: "normal"    },
+  { code: "  '안녕, 글로벌 세계여!'",                        kind: "highlight" },
+  { code: ");",                                           kind: "normal"    },
+];
+
+function syntaxColor(code: string, kind: LineKind): React.ReactNode {
+  if (kind === "comment") return <span style={{ color: "#6A9955", fontStyle: "italic" }}>{code}</span>;
+  const parts = code.split(/(\bimport\b|\bconst\b|\bawait\b|\bnew\b|\bfrom\b|'[^']*'|\/\/[^\n]*)/g);
+  return parts.filter(Boolean).map((p, i) => {
+    if (/^(import|const|await|new|from)$/.test(p)) return <span key={i} style={{ color: PURPLE }}>{p}</span>;
+    if (/^'/.test(p)) return <span key={i} style={{ color: "#CE9178" }}>{p}</span>;
+    if (/^\/\//.test(p)) return <span key={i} style={{ color: "#6A9955", fontStyle: "italic" }}>{p}</span>;
+    return <span key={i} style={{ color: TEXT }}>{p}</span>;
+  });
+}
+
+const Scene2: React.FC<{ dur: number }> = ({ dur }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const { opacity, translateY } = useSlideUp(0, dur);
-
-  const nodes = [
-    { label: "3초 녹음", icon: "🎙️" },
-    { label: "Qwen3-TTS", icon: "🤖" },
-    { label: "글로벌 콘텐츠", icon: "🌍" },
-  ];
-
-  const NODE_W = 220, ARROW_W = 160, TOTAL_W = NODE_W * 3 + ARROW_W * 2;
-  const SVG_H = 200;
-
-  const arrowProgress1 = interpolate(frame, [18, 48], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-  const arrowProgress2 = interpolate(frame, [36, 66], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-
-  const ArrowSvg: React.FC<{ progress: number }> = ({ progress }) => {
-    const len = 130;
-    const arrowOp = interpolate(progress, [0.8, 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-    return (
-      <svg width={ARROW_W} height={SVG_H} viewBox={`0 0 ${ARROW_W} ${SVG_H}`} style={{ flexShrink: 0 }}>
-        <line x1={10} y1={SVG_H / 2} x2={len + 10} y2={SVG_H / 2}
-          stroke={ACCENT} strokeWidth={2.5} strokeLinecap="round"
-          strokeDasharray={len} strokeDashoffset={len * (1 - progress)}
-          style={{ filter: `drop-shadow(0 0 6px ${ACCENT}99)` }}
-        />
-        <polygon points={`${len + 10},${SVG_H / 2 - 8} ${len + 28},${SVG_H / 2} ${len + 10},${SVG_H / 2 + 8}`}
-          fill={ACCENT} opacity={arrowOp}
-          style={{ filter: `drop-shadow(0 0 6px ${ACCENT}99)` }}
-        />
-      </svg>
-    );
-  };
+  const { opacity: panelOp, y: panelY } = useEntrance(0, dur);
+  const panelSp = spring({ fps, frame, config: { damping: 14, stiffness: 160 } });
+  const panelScale = interpolate(panelSp, [0, 1], [0.94, 1]);
 
   return (
-    <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 40 }}>
-      <div style={{ opacity, transform: `translateY(${translateY}px)`, fontSize: 22, fontWeight: 700, letterSpacing: "0.18em", color: MUTED, fontFamily: FONT, textTransform: "uppercase" }}>
-        AnimatedArrow — 흐름 시각화
+    <div style={{
+      position: "absolute", inset: 0, display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{
+        opacity: panelOp, transform: `translateY(${panelY}px) scale(${panelScale})`,
+        background: BG, border: `1px solid ${BORDER}`,
+        borderRadius: 16, width: 940, overflow: "hidden",
+        boxShadow: `0 40px 100px rgba(0,0,0,0.75), 0 0 0 1px ${BORDER}`,
+      }}>
+        {/* Title bar */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, padding: "13px 20px",
+          borderBottom: `1px solid ${BORDER}`, background: SURFACE,
+        }}>
+          <MacDots />
+          <span style={{ marginLeft: 14, fontSize: 13, color: MUTED, fontFamily: MONO }}>generate_audio.py</span>
+          <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+            {["Python 3.11", "UTF-8"].map((t, i) => (
+              <span key={i} style={{
+                fontSize: 11, color: MUTED, padding: "2px 8px",
+                border: `1px solid ${BORDER}`, borderRadius: 4, fontFamily: MONO,
+              }}>{t}</span>
+            ))}
+          </div>
+        </div>
+        {/* Code */}
+        <div style={{ padding: "18px 0" }}>
+          {CODE_LINES.map((line, i) => {
+            const f = Math.max(0, frame - i * 7);
+            const lineOp = interpolate(f, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+            const sp = spring({ fps, frame: f, config: { damping: 14, stiffness: 200 } });
+            const lineX = interpolate(sp, [0, 1], [-16, 0]);
+            const hl = line.kind === "highlight";
+            return (
+              <div key={i} style={{
+                display: "flex", alignItems: "center", minHeight: 32,
+                opacity: lineOp, transform: `translateX(${lineX}px)`,
+                background: hl ? "rgba(97,218,251,0.07)" : "transparent",
+                borderLeft: hl ? `3px solid ${CYAN}` : "3px solid transparent",
+              }}>
+                <span style={{ width: 52, textAlign: "right", paddingRight: 18, flexShrink: 0, fontSize: 13, color: "#3C4048", fontFamily: MONO }}>
+                  {i + 1}
+                </span>
+                <span style={{ fontSize: 16, fontFamily: MONO }}>
+                  {line.kind === "empty" ? "\u00A0" : syntaxColor(line.code, line.kind)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// S3 — Pipeline Flow  (276–406)  ← IDE 없음, 시각화
+// ─────────────────────────────────────────────────────────────
+const PIPELINE = [
+  { icon: "🎙️", label: "목소리 샘플",    sub: "3초 녹음",      color: CYAN   },
+  { icon: "🤖", label: "Qwen3-TTS",     sub: "로컬 추론",      color: PURPLE },
+  { icon: "🌍", label: "글로벌 콘텐츠",  sub: "100+ 언어",     color: GREEN  },
+];
+
+const STATS = [
+  { value: "0.1", unit: "초", label: "응답 속도",    color: CYAN   },
+  { value: "3",   unit: "초", label: "목소리 클로닝", color: PURPLE },
+  { value: "100", unit: "+",  label: "지원 언어",     color: GREEN  },
+];
+
+const Scene3: React.FC<{ dur: number }> = ({ dur }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { opacity: titleOp, y: titleY } = useEntrance(0, dur);
+
+  return (
+    <div style={{
+      position: "absolute", inset: 0, display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 56,
+    }}>
+      {/* Title */}
+      <div style={{ opacity: titleOp, transform: `translateY(${titleY}px)`, textAlign: "center" }}>
+        <div style={{ fontSize: 22, color: MUTED, fontFamily: MONO, letterSpacing: "0.18em", textTransform: "uppercase", marginBottom: 12 }}>
+          파이프라인
+        </div>
+        <div style={{ fontSize: 72, fontWeight: 900, color: TEXT, fontFamily: FONT, letterSpacing: "-0.03em" }}>
+          3초 만에{" "}
+          <span style={{
+            background: `linear-gradient(90deg, ${CYAN}, ${PURPLE})`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>
+            목소리가 복제된다
+          </span>
+        </div>
       </div>
 
-      <div style={{ opacity, transform: `translateY(${translateY}px)`, display: "flex", alignItems: "center" }}>
-        {nodes.map((node, i) => {
-          const delay = i * 10;
-          const f3 = Math.max(0, frame - delay);
-          const nodeOp = interpolate(f3, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
-          const sp3 = spring({ fps, frame: f3, config: { damping: 18, stiffness: 120 } });
-          const nodeTy = interpolate(sp3, [0, 1], [30, 0]);
+      {/* Flow nodes + arrows */}
+      <div style={{ display: "flex", alignItems: "center", gap: 0 }}>
+        {PIPELINE.map((node, i) => {
+          const delay = i * 12;
+          const f = Math.max(0, frame - delay);
+          const nodeOp = interpolate(f, [0, 10], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+          const sp = spring({ fps, frame: f, config: { damping: 14, stiffness: 180 } });
+          const nodeY = interpolate(sp, [0, 1], [48, 0]);
+          const nodeScale = interpolate(sp, [0, 1], [0.88, 1]);
+
+          // Arrow progress (draws from node i to i+1)
+          const arrowDelay = delay + 14;
+          const arrowProgress = interpolate(
+            Math.max(0, frame - arrowDelay), [0, 18], [0, 1],
+            { extrapolateLeft: "clamp", extrapolateRight: "clamp" }
+          );
 
           return (
             <React.Fragment key={i}>
+              {/* Node card */}
               <div style={{
-                opacity: nodeOp, transform: `translateY(${nodeTy}px)`,
-                width: NODE_W, background: SURFACE, border: `1px solid ${BORDER}`,
-                borderRadius: 20, padding: "28px 20px", textAlign: "center",
+                opacity: nodeOp, transform: `translateY(${nodeY}px) scale(${nodeScale})`,
+                width: 280, padding: "36px 32px",
+                background: `${node.color}0D`,
+                border: `1px solid ${node.color}44`,
+                borderRadius: 24, textAlign: "center",
+                boxShadow: `0 0 40px ${node.color}18`,
               }}>
-                <div style={{ fontSize: 52, marginBottom: 12 }}>{node.icon}</div>
-                <div style={{ fontSize: 22, fontWeight: 700, color: TEXT, fontFamily: FONT }}>{node.label}</div>
+                <div style={{ fontSize: 64, marginBottom: 16 }}>{node.icon}</div>
+                <div style={{ fontSize: 32, fontWeight: 800, color: TEXT, fontFamily: FONT, marginBottom: 8 }}>
+                  {node.label}
+                </div>
+                <div style={{
+                  display: "inline-block", padding: "4px 16px", borderRadius: 100,
+                  background: `${node.color}22`, fontSize: 16, color: node.color, fontFamily: MONO,
+                }}>
+                  {node.sub}
+                </div>
               </div>
-              {i < nodes.length - 1 && (
-                <ArrowSvg progress={i === 0 ? arrowProgress1 : arrowProgress2} />
+
+              {/* Arrow */}
+              {i < PIPELINE.length - 1 && (
+                <svg width={100} height={60} viewBox="0 0 100 60" style={{ flexShrink: 0 }}>
+                  <line
+                    x1={8} y1={30} x2={78} y2={30}
+                    stroke={MUTED} strokeWidth={2} strokeLinecap="round"
+                    strokeDasharray={70} strokeDashoffset={70 * (1 - arrowProgress)}
+                    style={{ filter: `drop-shadow(0 0 4px ${CYAN}88)` }}
+                  />
+                  <polygon
+                    points="78,22 96,30 78,38"
+                    fill={MUTED}
+                    opacity={interpolate(arrowProgress, [0.75, 1], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" })}
+                  />
+                </svg>
               )}
             </React.Fragment>
           );
         })}
       </div>
 
-      <div style={{ opacity, transform: `translateY(${translateY}px)`, fontSize: 28, color: MUTED, fontFamily: FONT }}>
-        수천만 원의 현지화 비용이 3초로 줄어든다
+      {/* Stat badges */}
+      <div style={{ display: "flex", gap: 28 }}>
+        {STATS.map((s, i) => {
+          const delay = 40 + i * 8;
+          const f = Math.max(0, frame - delay);
+          const statOp = interpolate(f, [0, 12], [0, 1], { extrapolateLeft: "clamp", extrapolateRight: "clamp" });
+          const sp = spring({ fps, frame: f, config: { damping: 14, stiffness: 180 } });
+          const statY = interpolate(sp, [0, 1], [20, 0]);
+
+          return (
+            <div key={i} style={{
+              opacity: statOp, transform: `translateY(${statY}px)`,
+              display: "flex", flexDirection: "column", alignItems: "center",
+              padding: "20px 44px",
+              background: `${s.color}0A`,
+              border: `1px solid ${s.color}33`,
+              borderRadius: 18,
+            }}>
+              <div style={{ fontFamily: MONO, color: s.color, lineHeight: 1 }}>
+                <span style={{ fontSize: 56, fontWeight: 900 }}>{s.value}</span>
+                <span style={{ fontSize: 30, fontWeight: 700 }}>{s.unit}</span>
+              </div>
+              <div style={{ fontSize: 18, color: MUTED, fontFamily: FONT, marginTop: 8 }}>{s.label}</div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 };
 
 // ─────────────────────────────────────────────────────────────
-// Scene 5 — Closing Callout (505–600, 3.2s)
+// S4 — Terminal  (409–539)  ← IDE 적재적소 사용
 // ─────────────────────────────────────────────────────────────
+const TERM_LINES: Array<{ prompt: string; text: string; type: "cmd" | "success" | "info" | "error" }> = [
+  { prompt: "$ ", text: "conda activate qwen3-tts",                          type: "cmd"     },
+  { prompt: "",   text: "(qwen3-tts) 환경 활성화 완료 ✓",                      type: "success" },
+  { prompt: "$ ", text: "python scripts/generate_audio.py --channel vibe",    type: "cmd"     },
+  { prompt: "",   text: "🎙️  Qwen3-TTS 모델 초기화 중...",                     type: "info"    },
+  { prompt: "",   text: "✓  ref_voice.wav 로드 완료 (3.2s)",                  type: "success" },
+  { prompt: "",   text: "⚡  음성 생성 중... [==========>] 100%",              type: "info"    },
+  { prompt: "",   text: "✓  output/vibe/audio.mp3 저장 완료",                 type: "success" },
+  { prompt: "",   text: "ERROR: rm -rf /  — 접근이 차단되었습니다",             type: "error"   },
+];
+const TERM_COLOR = { cmd: TEXT, success: GREEN, info: CYAN, error: RED } as const;
+
+const Scene4: React.FC<{ dur: number }> = ({ dur }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+
+  const LINE_GAP = 17;
+  const CHARS_PER_FRAME = 2.2;
+  const errorStart = 7 * LINE_GAP;
+  const hasError = frame > errorStart + 8;
+  const pulseF = Math.max(0, frame - errorStart - 8);
+  const pulse = hasError ? 0.5 + 0.5 * Math.sin((pulseF / fps) * Math.PI * 3.5) : 0;
+
+  const { opacity, y } = useEntrance(0, dur);
+  const sp = spring({ fps, frame, config: { damping: 14, stiffness: 150 } });
+  const scale = interpolate(sp, [0, 1], [0.94, 1]);
+
+  return (
+    <div style={{
+      position: "absolute", inset: 0, display: "flex",
+      flexDirection: "column", alignItems: "center", justifyContent: "center",
+    }}>
+      <div style={{
+        opacity, transform: `translateY(${y}px) scale(${scale})`,
+        width: 980, borderRadius: 16, overflow: "hidden",
+        border: hasError
+          ? `1px solid rgba(239,68,68,${(0.3 + pulse * 0.5).toFixed(2)})`
+          : `1px solid ${BORDER}`,
+        boxShadow: hasError
+          ? `0 0 ${24 + pulse * 60}px rgba(239,68,68,${(0.15 + pulse * 0.35).toFixed(2)}), 0 40px 100px rgba(0,0,0,0.75)`
+          : "0 40px 100px rgba(0,0,0,0.75)",
+      }}>
+        <div style={{
+          display: "flex", alignItems: "center", gap: 10, padding: "13px 18px",
+          borderBottom: `1px solid ${BORDER}`, background: SURFACE,
+        }}>
+          <MacDots />
+          <span style={{ marginLeft: 10, fontSize: 13, color: MUTED, fontFamily: MONO }}>zsh — auto-yt</span>
+          {hasError && (
+            <span style={{
+              marginLeft: "auto", fontSize: 12, color: RED,
+              fontFamily: MONO, opacity: 0.7 + pulse * 0.3,
+            }}>● 오류 감지됨</span>
+          )}
+        </div>
+        <div style={{ background: "#0A0A0A", padding: "24px 28px", minHeight: 320 }}>
+          {TERM_LINES.map((line, i) => {
+            const f = Math.max(0, frame - i * LINE_GAP);
+            const full = line.prompt + line.text;
+            const shown = Math.min(full.length, Math.floor(f * CHARS_PER_FRAME));
+            if (shown === 0) return null;
+            const typing = shown < full.length;
+            const color = TERM_COLOR[line.type];
+            return (
+              <div key={i} style={{
+                fontSize: 17, fontFamily: MONO, color, lineHeight: 1.88, display: "flex", alignItems: "center",
+              }}>
+                <span>{full.slice(0, shown)}</span>
+                {typing && (
+                  <span style={{
+                    display: "inline-block", width: 9, height: 18, background: color, marginLeft: 2,
+                    opacity: Math.floor(frame / 14) % 2 === 0 ? 1 : 0,
+                  }} />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// S5 — Keyword Pop  (542–642)  ← IDE 없음, 타이포 집중
+// ─────────────────────────────────────────────────────────────
+const TAGS = [
+  { label: "무료",          color: CYAN   },
+  { label: "로컬 실행",     color: GREEN  },
+  { label: "오프라인",      color: PURPLE },
+  { label: "목소리 클로닝",  color: RED    },
+];
+
 const Scene5: React.FC<{ dur: number }> = ({ dur }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
-  const { opacity: op, translateY: ty } = useSlideUp(0, dur);
-  const { opacity: opSub, translateY: tySub } = useSlideUp(16, dur);
-  const sp = spring({ fps, frame, config: { damping: 18, stiffness: 105, mass: 1.2 } });
+
+  const kwSp = spring({ fps, frame: Math.max(0, frame - 6), config: { damping: 12, stiffness: 200 } });
+  const kwScale = interpolate(kwSp, [0, 1], [0.55, 1]);
+  const kwOp = interpolate(frame, [0, 6, Math.max(7, dur - 12), dur], [0, 1, 1, 0], {
+    extrapolateLeft: "clamp", extrapolateRight: "clamp",
+  });
+  const blur = interpolate(kwOp, [0, 1], [0, 5]);
+
+  const { opacity: tagOp, y: tagY } = useEntrance(28, dur);
+
+  return (
+    <div style={{ position: "absolute", inset: 0 }}>
+      {/* dim + blur overlay */}
+      <div style={{
+        position: "absolute", inset: 0,
+        backdropFilter: `blur(${blur}px)`,
+        background: `rgba(13,17,23,${kwOp * 0.5})`,
+      }} />
+
+      <div style={{
+        position: "absolute", inset: 0, display: "flex",
+        flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 48,
+      }}>
+        {/* Giant keyword */}
+        <div style={{ opacity: kwOp, transform: `scale(${kwScale})`, textAlign: "center" }}>
+          <div style={{
+            fontSize: 172, fontWeight: 900, fontFamily: FONT, letterSpacing: "-0.05em", lineHeight: 1,
+            background: `linear-gradient(135deg, ${CYAN} 0%, ${PURPLE} 100%)`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+            filter: `drop-shadow(0 0 80px ${CYAN}40)`,
+          }}>
+            오픈소스
+          </div>
+          <div style={{ fontSize: 66, fontWeight: 900, color: TEXT, fontFamily: FONT, letterSpacing: "-0.03em", lineHeight: 1.2, marginTop: 8 }}>
+            혁명
+          </div>
+        </div>
+
+        {/* Tag row */}
+        <div style={{ opacity: tagOp, transform: `translateY(${tagY}px)`, display: "flex", gap: 18 }}>
+          {TAGS.map((tag, i) => (
+            <div key={i} style={{
+              padding: "12px 28px", borderRadius: 100,
+              border: `1px solid ${tag.color}55`,
+              background: `${tag.color}0E`,
+              fontSize: 22, fontWeight: 700, fontFamily: FONT, color: tag.color,
+            }}>{tag.label}</div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ─────────────────────────────────────────────────────────────
+// S6 — Closing  (645–720)
+// ─────────────────────────────────────────────────────────────
+const CORNERS: React.CSSProperties[] = [
+  { top: 22, left: 22, borderTop: `2px solid ${CYAN}`, borderLeft: `2px solid ${CYAN}` },
+  { top: 22, right: 22, borderTop: `2px solid ${CYAN}`, borderRight: `2px solid ${CYAN}` },
+  { bottom: 22, left: 22, borderBottom: `2px solid ${CYAN}`, borderLeft: `2px solid ${CYAN}` },
+  { bottom: 22, right: 22, borderBottom: `2px solid ${CYAN}`, borderRight: `2px solid ${CYAN}` },
+];
+
+const Scene6: React.FC<{ dur: number }> = ({ dur }) => {
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const { opacity, y } = useEntrance(0, dur);
+  const { opacity: subOp, y: subY } = useEntrance(18, dur);
+  const sp = spring({ fps, frame, config: { damping: 12, stiffness: 180 } });
   const scale = interpolate(sp, [0, 1], [0.91, 1]);
-  const glow = 0.5 + 0.5 * Math.sin((frame / fps) * Math.PI * 1.8);
+  const glow = 0.5 + 0.5 * Math.sin((frame / fps) * Math.PI * 2.2);
 
   return (
     <div style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
       <div style={{
-        opacity: op, transform: `translateY(${ty}px) scale(${scale})`,
-        padding: "62px 84px",
-        background: "rgba(255,107,107,0.05)",
-        border: `2px solid rgba(255,107,107,${(0.28 + glow * 0.28).toFixed(2)})`,
-        borderRadius: 36, textAlign: "center", maxWidth: 1060,
-        boxShadow: `0 0 ${44 + glow * 44}px rgba(255,107,107,0.12), 0 36px 88px rgba(0,0,0,0.6)`,
+        opacity, transform: `translateY(${y}px) scale(${scale})`,
+        padding: "72px 96px",
+        background: `rgba(97,218,251,0.04)`,
+        border: `2px solid rgba(97,218,251,${(0.18 + glow * 0.32).toFixed(2)})`,
+        borderRadius: 36, textAlign: "center", maxWidth: 1140,
+        boxShadow: `0 0 ${40 + glow * 70}px rgba(97,218,251,0.08), 0 48px 120px rgba(0,0,0,0.75)`,
         position: "relative",
       }}>
-        {/* Corner accents */}
-        {[
-          { top: 18, left: 18, borderTop: `2px solid ${ACCENT}`, borderLeft: `2px solid ${ACCENT}` } as React.CSSProperties,
-          { top: 18, right: 18, borderTop: `2px solid ${ACCENT}`, borderRight: `2px solid ${ACCENT}` } as React.CSSProperties,
-          { bottom: 18, left: 18, borderBottom: `2px solid ${ACCENT}`, borderLeft: `2px solid ${ACCENT}` } as React.CSSProperties,
-          { bottom: 18, right: 18, borderBottom: `2px solid ${ACCENT}`, borderRight: `2px solid ${ACCENT}` } as React.CSSProperties,
-        ].map((s, i) => <div key={i} style={{ position: "absolute", width: 32, height: 32, ...s }} />)}
-
-        <div style={{ fontSize: 96, fontWeight: 900, fontFamily: FONT, letterSpacing: "-0.03em", lineHeight: 1.15, color: TEXT }}>
-          진입 장벽이{" "}
-          <span style={{ color: ACCENT, textShadow: `0 0 80px ${ACCENT}55` }}>완전히 붕괴됐다</span>
+        {CORNERS.map((s, i) => (
+          <div key={i} style={{ position: "absolute", width: 40, height: 40, ...s }} />
+        ))}
+        <div style={{ fontSize: 92, fontWeight: 900, fontFamily: FONT, letterSpacing: "-0.03em", lineHeight: 1.15, color: TEXT }}>
+          코드 한 줄이{" "}
+          <span style={{
+            background: `linear-gradient(90deg, ${CYAN}, ${PURPLE})`,
+            WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          }}>세상을 바꾼다</span>
         </div>
-        <div style={{ opacity: opSub, transform: `translateY(${tySub}px)`, fontSize: 30, color: MUTED, fontFamily: FONT, marginTop: 32, lineHeight: 1.65 }}>
-          상상력만 있으면 글로벌 무대에서 놀 수 있는 판이 깔렸다
+        <div style={{
+          opacity: subOp, transform: `translateY(${subY}px)`,
+          fontSize: 24, color: "#6A9955", fontFamily: MONO, marginTop: 32, lineHeight: 1.7, fontStyle: "italic",
+        }}>
+          {'// Qwen3-TTS · Remotion · IDE Design System · 2026'}
         </div>
       </div>
     </div>
@@ -331,38 +583,27 @@ const Scene5: React.FC<{ dur: number }> = ({ dur }) => {
 };
 
 // ─────────────────────────────────────────────────────────────
-// SampleVideo (20s, 600 frames @ 30fps)
+// SampleVideo — 24s / 720f / 씬 겹침 없음
+//
+//  S1  0–130     Hero
+//  S2  133–273   CodeBlock   (IDE ✓)
+//  S3  276–406   Pipeline    (비주얼)
+//  S4  409–539   Terminal    (IDE ✓)
+//  S5  542–642   Keyword Pop
+//  S6  645–720   Closing
 // ─────────────────────────────────────────────────────────────
-const TOTAL = 600;
+const TOTAL = 720;
 
 export const SampleVideo: React.FC = () => (
   <div style={{ width: 1920, height: 1080, position: "relative", overflow: "hidden" }}>
     <Background />
 
-    {/* Scene 1: Hero Title */}
-    <Sequence from={0} durationInFrames={130}>
-      <Scene1 dur={130} />
-    </Sequence>
-
-    {/* Scene 2: FeatureCard × 3 Stagger */}
-    <Sequence from={115} durationInFrames={150}>
-      <Scene2 dur={150} />
-    </Sequence>
-
-    {/* Scene 3: MockupDevice — Phone */}
-    <Sequence from={255} durationInFrames={140}>
-      <Scene3 dur={140} />
-    </Sequence>
-
-    {/* Scene 4: AnimatedArrow 흐름 */}
-    <Sequence from={380} durationInFrames={145}>
-      <Scene4 dur={145} />
-    </Sequence>
-
-    {/* Scene 5: Closing Callout */}
-    <Sequence from={505} durationInFrames={95}>
-      <Scene5 dur={95} />
-    </Sequence>
+    <Sequence from={0}   durationInFrames={130}><Scene1 dur={130} /></Sequence>
+    <Sequence from={133} durationInFrames={140}><Scene2 dur={140} /></Sequence>
+    <Sequence from={276} durationInFrames={130}><Scene3 dur={130} /></Sequence>
+    <Sequence from={409} durationInFrames={130}><Scene4 dur={130} /></Sequence>
+    <Sequence from={542} durationInFrames={100}><Scene5 dur={100} /></Sequence>
+    <Sequence from={645} durationInFrames={75}> <Scene6 dur={75}  /></Sequence>
 
     <ProgressBar total={TOTAL} />
   </div>

@@ -7,7 +7,7 @@ import syncData from "../data/sync_data.json";
 const FPS = 30;
 const DURATION_FRAMES =
   syncData.duration_ms > 0
-    ? Math.ceil((syncData.duration_ms / 1000) * FPS) + FPS
+    ? Math.ceil((syncData.duration_ms / 1000) * FPS) + FPS * 3
     : FPS * 60 * 8;
 
 export const Root: React.FC = () => {
@@ -24,7 +24,7 @@ export const Root: React.FC = () => {
       <Composition
         id="SampleVideo"
         component={SampleVideo}
-        durationInFrames={600}
+        durationInFrames={720}
         fps={FPS}
         width={1920}
         height={1080}

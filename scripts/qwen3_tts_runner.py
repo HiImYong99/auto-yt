@@ -105,11 +105,16 @@ def match_chunk_sentences(
                     break
 
         if matched:
+            raw_start = chunk_start_ms + matched[0]["start_ms"]
+            raw_end   = chunk_start_ms + matched[-1]["end_ms"]
+            # Whisper가 청크 경계를 초과하는 경우 clamp (다음 청크와 겹침 방지)
+            s_ms = max(chunk_start_ms, min(raw_start, chunk_end_ms - 100))
+            e_ms = max(s_ms + 100,    min(raw_end,   chunk_end_ms))
             groups.append({
                 "id": sent_id_offset + i,
                 "text": sentence.strip(),
-                "start_ms": chunk_start_ms + matched[0]["start_ms"],
-                "end_ms": chunk_start_ms + matched[-1]["end_ms"],
+                "start_ms": s_ms,
+                "end_ms":   e_ms,
                 "words": [
                     {**w, "start_ms": chunk_start_ms + w["start_ms"],
                           "end_ms":   chunk_start_ms + w["end_ms"]}
@@ -130,6 +135,24 @@ def match_chunk_sentences(
             })
 
     return groups
+
+
+def fix_overlaps(groups: list[dict]) -> list[dict]:
+    """청크 경계에서 발생할 수 있는 타임스탬프 overlap 제거"""
+    fixed = sorted(groups, key=lambda x: x["id"])
+    for i in range(1, len(fixed)):
+        prev = fixed[i - 1]
+        curr = fixed[i]
+        if curr["start_ms"] < prev["end_ms"]:
+            # 중간점으로 분리
+            mid = (prev["end_ms"] + curr["start_ms"]) // 2
+            print(f"  [overlap 수정] id={prev['id']} end {prev['end_ms']}→{mid}ms / id={curr['id']} start {curr['start_ms']}→{mid+50}ms")
+            prev["end_ms"] = mid
+            curr["start_ms"] = mid + 50
+        dur = fixed[i]["end_ms"] - fixed[i]["start_ms"]
+        if dur < 400:
+            print(f"  [경고] id={fixed[i]['id']} dur={dur}ms (매우 짧음) — '{fixed[i]['text'][:30]}'")
+    return fixed
 
 
 def scale_timestamps(groups: list[dict], factor: float) -> list[dict]:
@@ -179,10 +202,11 @@ def main():
     sample_rate = 24000
     silence = np.zeros(int(sample_rate * SILENCE_MS / 1000), dtype=np.float32)
 
-    all_audio   = []
-    all_groups  = []
-    cursor_ms   = 0
-    sent_offset = 0
+    all_audio      = []
+    all_groups     = []
+    chunk_boundaries = []   # 청크별 정확한 경계 (배속 전 ms)
+    cursor_ms      = 0
+    sent_offset    = 0
 
     print("\n[Whisper 타임스탬프 추출 중...]")
     whisper_loaded = False
@@ -198,6 +222,14 @@ def main():
         )
         wav = np.array(wavs[0], dtype=np.float32)
         chunk_dur_ms = int(len(wav) / sr * 1000)
+
+        # 청크 경계 기록 (배속 전)
+        chunk_boundaries.append({
+            "chunk_idx": ci,
+            "start_ms": cursor_ms,
+            "end_ms": cursor_ms + chunk_dur_ms,
+            "sent_ids": list(range(sent_offset, sent_offset + len(chunk))),
+        })
 
         # 청크별 whisper
         if not whisper_loaded:
@@ -236,6 +268,7 @@ def main():
 
     # 타임스탬프 보정
     scaled_groups = scale_timestamps(all_groups, SPEED)
+    scaled_groups = fix_overlaps(scaled_groups)
 
     # 저장
     out_audio = Path(args.output_audio)
@@ -250,6 +283,20 @@ def main():
         encoding="utf-8",
     )
     print(f"싱크 저장: {out_sync} ({len(scaled_groups)}문장)")
+
+    # 청크 경계 저장 (배속 보정 적용)
+    scaled_boundaries = [
+        {**b,
+         "start_ms": int(b["start_ms"] / SPEED),
+         "end_ms":   int(b["end_ms"]   / SPEED)}
+        for b in chunk_boundaries
+    ]
+    out_chunks = out_sync.parent / "chunk_boundaries.json"
+    out_chunks.write_text(
+        json.dumps(scaled_boundaries, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    print(f"청크 경계 저장: {out_chunks} ({len(scaled_boundaries)}청크)")
     print(f"\nTTS 완료! ({len(sentences)}문장 / {total_ms/1000:.1f}초)")
 
 

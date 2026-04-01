@@ -72,11 +72,22 @@ def phase_tts(channel_id: str, script_path: Path) -> bool:
     return ok
 
 
+def phase_generate_metadata_and_scene_plan(channel_id: str) -> bool:
+    print(f"[{channel_id}] 메타데이터 및 씬 플랜 생성 중...")
+    ok, _ = run_cmd([
+        sys.executable, str(ROOT / "scripts" / "generate_metadata_and_scene_plan.py"),
+        "--channel", channel_id
+    ], channel_id)
+    if ok:
+        print(f"[{channel_id}] 생성 완료")
+    return ok
+
 def phase_render(channel_id: str, channels: dict) -> bool:
     ch = channels[channel_id]
     out_dir = ROOT / ch["output_dir"]
     src_audio = out_dir / "audio.mp3"
     src_sync = out_dir / "sync_data.json"
+    src_scene = out_dir / "scene_plan.json"
 
     if not src_audio.exists() or not src_sync.exists():
         print(f"[{channel_id}] TTS 파일 없음. TTS 먼저 실행하세요.")
@@ -85,6 +96,9 @@ def phase_render(channel_id: str, channels: dict) -> bool:
     # Remotion 공유 파일 갱신
     shutil.copy(src_audio, ROOT / "public" / "audio.mp3")
     shutil.copy(src_sync, ROOT / "src" / "data" / "sync_data.json")
+    if src_scene.exists():
+        shutil.copy(src_scene, ROOT / "src" / "data" / "scene_plan.json")
+        print(f"[{channel_id}] 씬 플랜 적용 완료")
 
     # 빌드 캐시 전체 삭제 (webpack/esbuild 등 — 이전 대본으로 렌더되는 문제 방지)
     cache_dir = ROOT / "node_modules" / ".cache"
@@ -124,8 +138,11 @@ def phase_thumbnail(channel_id: str) -> bool:
 
 
 def inject_timeline(channel_id: str, channels: dict) -> None:
-    """sync_data.json의 실제 타임스탬프로 metadata.json 타임라인 섹션을 항상 교체"""
+    """sync_data.json의 실제 타임스탬프로 metadata.json 타임라인 섹션을 항상 교체 + 설명 문구 다채널 최적화"""
     import re
+    import random
+    from datetime import datetime
+    
     out_dir = ROOT / channels[channel_id]["output_dir"]
     meta_path = out_dir / "metadata.json"
     sync_path = out_dir / "sync_data.json"
@@ -134,37 +151,98 @@ def inject_timeline(channel_id: str, channels: dict) -> None:
         return
 
     meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    
+    # ── 1. 타임라인 생성 ──
     chapters = meta.get("chapters")
-    if not chapters:
-        return
+    if chapters:
+        sync = json.loads(sync_path.read_text(encoding="utf-8"))
+        id_to_ms = {s["id"]: s["start_ms"] for s in sync["sentences"]}
+        timecodes = []
+        for i, ch in enumerate(chapters):
+            ms = id_to_ms.get(ch["sentence_id"], 0)
+            if i == 0:
+                ms = 0
+            m, s = divmod(ms // 1000, 60)
+            # 가장 표준적인 '00:00 제목' 형식 사용 (특수기호 최소화)
+            timecodes.append(f"{m:02d}:{s:02d} {ch['name']}")
+        
+        # 앞뒤에 확실한 공백 라인 추가
+        timeline_block = "\n\n00:00 시작\n" + "\n".join(timecodes[1:]) + "\n\n"
+    else:
+        timeline_block = ""
 
-    sync = json.loads(sync_path.read_text(encoding="utf-8"))
-    id_to_ms = {s["id"]: s["start_ms"] for s in sync["sentences"]}
-
-    timecodes = []
-    for ch in chapters:
-        ms = id_to_ms.get(ch["sentence_id"], 0)
-        m, s = divmod(ms // 1000, 60)
-        timecodes.append(f"{m:02d}:{s:02d} {ch['name']}")
-    timeline_block = "📌 타임라인\n" + "\n".join(timecodes)
-
+    # ── 2. 설명 문구 랜덤화 (SEO 반복 방지) ──
+    intro_variations = [
+        f"오늘 ({datetime.now().strftime('%Y-%m-%d')}) 전해드리는 AI 소식입니다.",
+        "많은 분들이 궁금해하셨던 바로 그 내용을 정리했습니다.",
+        "생산성을 극대화하고 싶은 분들이라면 이 영상이 큰 도움이 되실 겁니다.",
+        "기술의 변화가 빠른 요즘, 우리가 꼭 알아야 할 핵심만 담았습니다.",
+        "어디서도 듣기 힘든 실전 위주의 운영 구조를 공유합니다."
+    ]
+    cta_variations = [
+        "구독과 좋아요는 영상 제작에 정말 큰 힘이 됩니다! 🚀",
+        "유익하셨다면 구독 부탁드려요. 더 좋은 콘텐츠로 보답하겠습니다.",
+        "여러분의 생각은 어떠신가요? 댓글로 자유롭게 의견 나눠주세요!",
+        "알림 설정까지 해두시면 최신 트렌드를 가장 빠르게 확인하실 수 있습니다."
+    ]
+    
     desc = meta.get("description", "")
+    
+    # 상단 인트로 삽입 (없을 경우에만)
+    if not any(v[:10] in desc for v in intro_variations):
+        desc = random.choice(intro_variations) + "\n\n" + desc
+        
+    # 하단 CTA 삽입 (없을 경우에만)
+    if not any(v[:10] in desc for v in cta_variations):
+        desc = desc + "\n\n" + random.choice(cta_variations)
+
+    # ── 3. 타임라인 주입 ──
     if "{{TIMELINE}}" in desc:
-        # {{TIMELINE}} 앞에 이미 "📌 타임라인"이 있으면 헤더 없이 타임코드만 삽입
         if "📌 타임라인" in desc:
-            desc = desc.replace("{{TIMELINE}}", "\n".join(timecodes))
+            desc = desc.replace("{{TIMELINE}}", "\n".join(timecodes) if timeline_block else "")
         else:
             desc = desc.replace("{{TIMELINE}}", timeline_block)
     elif "📌 타임라인" in desc:
-        # 기존 타임라인 섹션 전체를 교체
         desc = re.sub(r"📌 타임라인\n(?:\d{2}:\d{2}[^\n]*\n?)*", timeline_block, desc)
     else:
         desc = desc + "\n\n" + timeline_block
 
     meta["description"] = desc
     meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
-    print(f"[{channel_id}] 타임라인 자동 주입 완료")
+    print(f"[{channel_id}] 타임라인 및 설명 문구 최적화 완료")
 
+def generate_srt(channel_id: str, channels: dict) -> None:
+    """sync_data.json을 기반으로 captions.srt 파일을 생성 (YouTube 자막 SEO 향상)"""
+    out_dir = ROOT / channels[channel_id]["output_dir"]
+    sync_path = out_dir / "sync_data.json"
+    srt_path = out_dir / "captions.srt"
+
+    if not sync_path.exists():
+        return
+
+    try:
+        sync_data = json.loads(sync_path.read_text(encoding="utf-8"))
+        sentences = sync_data.get("sentences", [])
+        if not sentences:
+            return
+
+        def ms_to_srt_time(ms: int) -> str:
+            s, ms = divmod(ms, 1000)
+            m, s = divmod(s, 60)
+            h, m = divmod(m, 60)
+            return f"{h:02d}:{m:02d}:{s:02d},{ms:03d}"
+
+        srt_lines = []
+        for i, s in enumerate(sentences, start=1):
+            start_time = ms_to_srt_time(s["start_ms"])
+            end_time = ms_to_srt_time(s["end_ms"])
+            text = s.get("text", "").strip()
+            srt_lines.append(f"{i}\n{start_time} --> {end_time}\n{text}\n")
+        
+        srt_path.write_text("\n".join(srt_lines), encoding="utf-8")
+        print(f"[{channel_id}] 자막(SRT) 생성 완료: {srt_path.name}")
+    except Exception as e:
+        print(f"[{channel_id}] 자막(SRT) 생성 실패: {e}")
 
 def phase_upload(channel_id: str, channels: dict, force_new: bool = False) -> bool:
     print(f"[{channel_id}] 업로드 시작...")
@@ -194,6 +272,7 @@ def main():
     parser.add_argument("scripts", nargs="*", help="대본 파일들")
     parser.add_argument("--channel", help="채널 ID (파일명 prefix 없을 때)")
     parser.add_argument("--skip-tts", action="store_true")
+    parser.add_argument("--skip-metadata", action="store_true", help="메타데이터 및 씬 플랜 생성 건너뜀")
     parser.add_argument("--skip-render", action="store_true")
     parser.add_argument("--skip-thumbnail", action="store_true")
     parser.add_argument("--skip-upload", action="store_true")
@@ -241,6 +320,20 @@ def main():
             sys.exit(1)
         print()
 
+    # ── Phase 1.5: 메타데이터 및 씬 플랜 생성 (병렬) ──
+    if not args.skip_metadata:
+        print("=" * 50 + "\nPhase 1.5: 메타데이터 및 씬 플랜 생성 (병렬)\n" + "=" * 50)
+        failed = []
+        with ThreadPoolExecutor(max_workers=len(jobs)) as ex:
+            futures = {ex.submit(phase_generate_metadata_and_scene_plan, cid): cid for cid, sp in jobs}
+            for f in as_completed(futures):
+                if not f.result():
+                    failed.append(futures[f])
+        if failed:
+            print(f"생성 실패: {failed}")
+            sys.exit(1)
+        print()
+
     # ── Phase 2: 렌더 (순차) ──
     if not args.skip_render:
         print("=" * 50 + "\nPhase 2: 렌더링 (순차)\n" + "=" * 50)
@@ -260,9 +353,10 @@ def main():
                     print(f"[{futures[f]}] 썸네일 생성 실패 (업로드는 계속 진행)")
         print()
 
-    # ── Phase 2.7: 타임라인 주입 ──
+    # ── Phase 2.7: 타임라인 및 자막 생성 ──
     for cid, _ in jobs:
         inject_timeline(cid, channels)
+        generate_srt(cid, channels)
 
     # ── Phase 3: 업로드 (병렬) ──
     if not args.skip_upload:

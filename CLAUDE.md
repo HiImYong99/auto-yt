@@ -78,6 +78,10 @@ python3 scripts/upload_youtube.py
 3. `src/components/MainVideo.tsx` SCENE_PLAN 전체 교체
 4. `run_pipeline.py --skip-tts` 실행
 
+## Video Pipeline
+- YouTube 재업로드 시 반드시 `--force-new` 플래그 사용 (metadata update 금지 — 구버전 영상이 노출되는 문제 방지)
+- 소스 데이터(vibe.txt 등)가 변경되면 모든 의존 파일을 재생성할 것: SCENE_PLAN, metadata.json, 썸네일
+
 ## 중요 규칙
 - `.env`, `secrets/`, `output/`는 절대 커밋하지 말 것
 - `sync_data.json` 타임스탬프 단위: **밀리초(ms)**
