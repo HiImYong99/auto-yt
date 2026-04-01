@@ -272,7 +272,7 @@ def main():
     parser.add_argument("scripts", nargs="*", help="대본 파일들")
     parser.add_argument("--channel", help="채널 ID (파일명 prefix 없을 때)")
     parser.add_argument("--skip-tts", action="store_true")
-    parser.add_argument("--skip-metadata", action="store_true", help="메타데이터 및 씬 플랜 생성 건너뜀")
+    parser.add_argument("--skip-metadata", action="store_true", default=True, help="메타데이터 및 씬 플랜 생성 건너뜀 (기본값: 건너뜀 — Claude Code가 직접 생성)")
     parser.add_argument("--skip-render", action="store_true")
     parser.add_argument("--skip-thumbnail", action="store_true")
     parser.add_argument("--skip-upload", action="store_true")
